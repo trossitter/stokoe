@@ -80,4 +80,4 @@ Multi-language sign support, full ASL conversation recognition, sentence/phrase 
 
 ## Personal context
 
-Thalia did ASL CV research in 2018 with a glove-based prototype. Path A is a return to that lineage with seven more years of tooling, framed not as a compromise but as a principled application of the spec's Controlled Pilot Quality clause.
+Thalia did ASL CV research in 2018 with a glove-based prototype. 
