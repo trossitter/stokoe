@@ -175,6 +175,7 @@ def main():
         output_names=["logits"],
         dynamic_axes={"landmarks": {0: "batch"}, "logits": {0: "batch"}},
         opset_version=17,
+        dynamo=False,  # force legacy TorchScript exporter — dynamo strips weights
     )
     print(f"ONNX saved: {onnx_path}")
 
