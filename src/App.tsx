@@ -10,6 +10,7 @@ import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
 import { SwipeTutorial } from "./components/SwipeTutorial";
+import { CameraHint } from "./components/CameraHint";
 
 type SessionState = "idle" | "evaluating" | "result";
 
@@ -118,6 +119,9 @@ export default function App() {
             videoRef={videoRef}
             sessionState={showTutorial ? "evaluating" : displayState}
             onFramesReady={handleFramesReady}
+            overlay={displayState === "result" && passed !== null
+              ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+              : null}
           />
         </div>
         <FeedbackPanel

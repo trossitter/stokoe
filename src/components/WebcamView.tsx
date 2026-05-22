@@ -8,9 +8,10 @@ type Props = {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   sessionState: "idle" | "recording" | "evaluating" | "result";
   onFramesReady: (frames: ImageData[]) => void;
+  overlay?: React.ReactNode;
 };
 
-export function WebcamView({ videoRef, sessionState, onFramesReady }: Props) {
+export function WebcamView({ videoRef, sessionState, onFramesReady, overlay }: Props) {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -153,6 +154,7 @@ export function WebcamView({ videoRef, sessionState, onFramesReady }: Props) {
         style={{ transform: "scaleX(-1)" }}
       />
       <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+      {overlay}
     </section>
   );
 }
