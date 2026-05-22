@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASL Stokoe Notation — Fairy Tale Passages</title>
+  <style>
+    @font-face {
+      font-family: 'StokoeTempo';
+      src: url('/fonts/StokoeTempoForWeb/stt_____-webfont.woff2') format('woff2'),
+           url('/fonts/StokoeTempoForWeb/stt_____-webfont.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      color: #e0f0ff;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    header h1 {
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #00eeff;
+      text-shadow: 0 0 20px #00eeff88, 0 0 40px #00aaff44;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      font-size: 11px;
+      color: #446688;
+      letter-spacing: 0.1em;
+    }
+
+    .stories {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 960px) {
+      .stories { grid-template-columns: 1fr; }
+    }
+
+    .story {
+      border: 1px solid #0a2040;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .story-title {
+      background: #020e1a;
+      padding: 14px 20px;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #00eeff;
+      text-shadow: 0 0 12px #00eeff66;
+      border-bottom: 1px solid #0a2040;
+    }
+
+    .beats {
+      padding: 8px 0;
+    }
+
+    .beat {
+      padding: 20px 24px;
+      border-bottom: 1px solid #050e1a;
+      transition: background 0.15s;
+    }
+
+    .beat:last-child { border-bottom: none; }
+    .beat:hover { background: #020e1a; }
+
+    .notation {
+      font-family: 'StokoeTempo', monospace;
+      font-size: 52px;
+      line-height: 1;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      text-shadow:
+        0 0 8px #00eeff,
+        0 0 20px #00aaff88,
+        0 0 40px #0066cc44;
+      margin-bottom: 10px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .gloss {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #00eeff;
+      margin-bottom: 4px;
+    }
+
+    .description {
+      font-size: 10px;
+      color: #334455;
+      letter-spacing: 0.05em;
+      line-height: 1.5;
+    }
+
+    .verified {
+      display: inline-block;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #00cc88;
+      background: #001a0f;
+      border: 1px solid #005533;
+      border-radius: 2px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .approx {
+      display: inline-block;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #cc8800;
+      background: #1a0f00;
+      border: 1px solid #553300;
+      border-radius: 2px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    footer {
+      margin-top: 64px;
+      text-align: center;
+      font-size: 10px;
+      color: #1a2a3a;
+      letter-spacing: 0.12em;
+    }
+
+    footer a { color: #224466; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Stokoe Notation — Fairy Tale Passages</h1>
+  <p>Tab · Dez · Sig &nbsp;|&nbsp; ASCII-Stokoe encoding rendered in StokoeTempo font (Grieve-Smith, Gallaudet)</p>
+</header>
+
+<div class="stories">
+
+  <!-- GOLDILOCKS (sourced) -->
+  <div class="story">
+    <div class="story-title">Goldilocks &amp; the Three Bears <span class="verified">sourced</span></div>
+    <div class="beats">
+
+      <div class="beat">
+        <div class="notation">BɑBɑz~</div>
+        <div class="gloss">STORY <span class="verified">corpus</span></div>
+        <div class="description">Neutral (ɑ), bilateral flat-B, wrist-oscillate (z~)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">[]√C‡√Cv ×•</div>
+        <div class="gloss">THREE BEARS <span class="verified">corpus</span></div>
+        <div class="description">Bilateral curved-C, contact · repeated</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">Bɑ√Bʌω</div>
+        <div class="gloss">DEEP WOODS <span class="verified">corpus</span></div>
+        <div class="description">Neutral (ɑ) to upper (ʌ), flat-B, loose-wiggle (ω)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">BʌˡBʌ÷</div>
+        <div class="gloss">HOUSE <span class="verified">corpus</span></div>
+        <div class="description">Upper space (ʌ), bilateral B-hands, repeated contact (÷)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">B⊤Vɒv•</div>
+        <div class="gloss">READ <span class="verified">corpus</span></div>
+        <div class="description">Overhead (⊤), V-hand over flat palm, downward brush (v•)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RED RIDING HOOD (generated) -->
+  <div class="story">
+    <div class="story-title">Little Red Riding Hood <span class="approx">generated</span></div>
+    <div class="beats">
+
+      <div class="beat">
+        <div class="notation">U5Dx</div>
+        <div class="gloss">MOTHER <span class="verified">vocab</span></div>
+        <div class="description">Chin (U), spread-5 handshape, tap-contact (Dx)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">U1v</div>
+        <div class="gloss">RED <span class="verified">vocab</span></div>
+        <div class="description">Lips (U), index finger (1), brush downward (v)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">BʌˡBʌ×</div>
+        <div class="gloss">WEAR CLOAK <span class="approx">~</span></div>
+        <div class="description">Upper space (ʌ), bilateral flat-B, contact across shoulders (×) · follows Goldilocks corpus pattern</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">P5z~</div>
+        <div class="gloss">FOREST <span class="approx">~</span></div>
+        <div class="description">Forehead-level (P), spread-5 (trees), wrist-oscillate (z~)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">}5×</div>
+        <div class="gloss">WOLF <span class="approx">~</span></div>
+        <div class="description">Cheek/temple (}), spread-claw handshape, contact at face (×)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">0A^B</div>
+        <div class="gloss">HELP <span class="verified">vocab</span></div>
+        <div class="description">Neutral space (0), fist on flat palm, lifts upward (^)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CINDERELLA (generated) -->
+  <div class="story">
+    <div class="story-title">Cinderella <span class="approx">generated</span></div>
+    <div class="beats">
+
+      <div class="beat">
+        <div class="notation">0BɑBɑ÷</div>
+        <div class="gloss">WORK ALL-DAY <span class="approx">~</span></div>
+        <div class="description">Neutral (ɑ), bilateral flat-B, repeated contact (÷) · `÷` from Goldilocks corpus</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">0Vz~</div>
+        <div class="gloss">DANCE <span class="approx">~</span></div>
+        <div class="description">Neutral space (0), V-hand (two-finger classifier for legs), side-oscillate (z~)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">0G></div>
+        <div class="gloss">GLASS / CLEAR <span class="approx">~</span></div>
+        <div class="description">Neutral (0), G-hand (index + thumb), forward motion (>) · `G>` from Goldilocks corpus</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">0A×A×</div>
+        <div class="gloss">SLIPPER / SHOE <span class="approx">~</span></div>
+        <div class="description">Neutral (0), bilateral fists (A), tap together (×)</div>
+      </div>
+
+      <div class="beat">
+        <div class="notation">[]B^B^</div>
+        <div class="gloss">HAPPY <span class="verified">vocab</span></div>
+        <div class="description">Chest ([  ]), flat-B hands, brush upward twice (^)</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Goldilocks passage sourced from ASL Stokoe notation corpus &nbsp;·&nbsp;
+  Red Riding Hood &amp; Cinderella generated from Stokoe symbol table (Mandel 1993) &nbsp;·&nbsp;
+  Font: StokoeTempo by Angus Grieve-Smith, Gallaudet University
+</footer>
+
+</body>
+</html>
