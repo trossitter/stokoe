@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# Stokoe — ASL 1 Vocabulary Tutor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser-based practice tool: prompt a word → learner signs into webcam → custom CV model returns pass/fail + a targeted hint. No pretrained models of any kind (see constraint below).
 
-Currently, two official plugins are available:
+Named for **William Stokoe** (1919–2000), whose 1960 monograph *Sign Language Structure* proved ASL is a natural language with its own phonology.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Quick start
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # localhost:5173
+npm run build    # tsc + vite build → dist/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Layer | Tech |
+|---|---|
+| Frontend | React 19 + TypeScript + Tailwind v4 + Vite |
+| Webcam | `MediaDevices.getUserMedia` — frames stay local |
+| Inference | ONNX Runtime Web (team-trained weights only) |
+| Training | PyTorch offline → export to ONNX |
+| Auth / progress | localStorage (Supabase if real auth needed) |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## The one hard constraint
+
+**No pretrained models** — no hand detectors, no pose estimators, no ImageNet backbones. The team owns architecture, dataset, and weights end-to-end. ONNX Runtime Web and classical CV (color segmentation, optical flow) are allowed as frameworks.
+
+## How classification works
+
+1. Fixed ROI overlay guides the learner to position hands in frame.
+2. Skin-color presence check (YCbCr/HSV) confirms hands are visible before recording.
+3. CNN (3 conv blocks, 64×64 RGB crops) + LSTM over frame sequence → softmax over vocabulary.
+4. Diff between expected and observed sign primitives (handshape, movement, location, orientation) drives the hint text.
+
+**Dataset:** ASL Citizen — 83,399 clips, 2,731 signs, 52 signers — filtered to the target vocabulary.
+
+## Privacy
+
+Frames are processed locally and never uploaded (hard requirement). No raw video is persisted — only derived state (pass/fail, attempt counts, mastery).
+
+## Docs
+
+- `ARCHITECTURE.md` — decisions and tradeoffs
+- `RESEARCH.md` — dataset and method synthesis
+- `VOCABULARY.md` — target sign list
+- `docs/` — extended references
