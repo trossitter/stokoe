@@ -1,6 +1,6 @@
 # Stokoe — Architecture (Draft)
 
-> _Draft, 2026-05-18. Several decisions pending clarification from Patrick on Requirement 7. Document expected to evolve substantially._
+> _Updated 2026-05-21. Architecture confirmed; dataset confirmed as ASL Citizen. See RESEARCH.md for full synthesis._
 
 ## What this is
 
@@ -23,19 +23,21 @@ Does *not* rule out:
 - Classical CV preprocessing (color segmentation, edge detection, optical flow)
 - PyTorch for offline training, exported to ONNX for in-browser inference
 
-## Strategic paths (one to be chosen pending Patrick's clarification)
+## Architecture decision (confirmed 2026-05-21)
 
-**Open question to Patrick (sent 2026-05-18):** _Does Requirement 7 prohibit using a pretrained landmark detector (e.g., MediaPipe Hands) as an offline labeling tool during dataset preparation, even when no pretrained component appears in the inference pipeline?_
+**Constraint resolved:** Requirement 7 prohibits pretrained models at inference. Frameworks and classical CV (color segmentation, optical flow) are allowed. Pretrained weights as an offline labeling tool were considered and ruled out — the team owns everything end-to-end.
 
-| Path | Approach | Tractable in a week? |
-|---|---|---|
-| **A. Color-marker / glove (Thalia's 2018 lineage)** | Learner wears provided colored fingertips. OpenCV color segmentation → from-scratch temporal classifier on tracked positions. | Yes. Most realistic. |
-| **B. Bare-hand, end-to-end from scratch** | Small CNN + temporal head on raw frames, random init. Requires substantial self-collected data. | Marginal. |
-| **C. Own landmark detector + classifier on top** | Two from-scratch models stacked. "Right" in spirit, very hard in the time. | No. |
+**Chosen approach:** Fixed ROI overlay (two guide rectangles) as the primary hand localization mechanism, backed by a skin-color presence check to confirm hands are in frame before recording. Sign classifier is a small 2D CNN per frame + LSTM over the frame sequence, trained from scratch on ASL Citizen, exported to TF.js or ONNX Runtime Web.
 
-If Patrick allows MediaPipe for **offline labeling only**, a fourth path opens: bare-hand inference distilled from MediaPipe-labeled training data, with no pretrained component shipped to the learner. Still hard, but feasible.
-
-**Default plan, pending Patrick:** Path A, with the gloves framed as part of the documented controlled conditions (Requirement 8 explicitly permits this).
+| Layer | Decision |
+|---|---|
+| **Hand localization** | Fixed ROI overlay — user positions hands in guide rectangles; no detector needed. |
+| **Presence check** | Skin-color blob detection (YCbCr/HSV) — secondary signal before recording starts. |
+| **Classifier** | CNN (32→64→128 channels, 3 blocks) + LSTM + softmax. Trained on ASL Citizen filtered to target vocabulary. |
+| **Input** | 64×64 RGB crops from fixed ROI. Optical flow computed offline for training; simple motion rep at inference. |
+| **Target size** | 3–8 MB FP32; 2–4 MB INT8. |
+| **Inference latency** | 100–300 ms (WASM); 30–100 ms (WebGL/WebGPU). |
+| **Training data** | ASL Citizen (83,399 clips, 2,731 signs, 52 signers). Filter to 75–100 target vocabulary. |
 
 ## Tech stack
 
@@ -46,7 +48,7 @@ If Patrick allows MediaPipe for **offline labeling only**, a fourth path opens: 
 | **CV preprocessing** | OpenCV.js (no pretrained models inside it) | Color segmentation, contour tracking for Path A. |
 | **Inference runtime** | TF.js or ONNX Runtime Web | Runs team-trained weights only. |
 | **Training** | PyTorch on personal / Colab GPU | Off-browser. Exports to ONNX or TFJS format. |
-| **Accounts + progress** | TBD (localStorage minimum; Supabase if Patrick wants real auth) | Awaiting clarification. |
+| **Accounts + progress** | localStorage minimum; Supabase if real auth is needed | Awaiting vocabulary selection. |
 
 ## Privacy model
 
@@ -68,11 +70,11 @@ Rule-based, tied to observable sign primitives — each prompted sign carries me
 
 ## Open decisions
 
-- Patrick's answer on Requirement 7 (offline labeling): determines Path A vs. distilled-bare-hand path.
-- Dataset scope: single signer (Thalia) vs. multi-signer pilot.
-- Validation split: held-out clips of training signers vs. held-out signers entirely. (Very different accuracy stories.)
-- Auth: localStorage vs. real auth.
-- Vocabulary list: which 75–100 ASL 1 items, prioritized by linguistic tractability (distinct handshapes, body-anchored locations, asymmetric two-hand signs deferred).
+- **Vocabulary selection:** which 75–100 ASL 1 signs? Use ASL-LEX to prioritize signs with distinctive motion profiles; defer fingerspelling and configuration-only distinctions.
+- **Sign boundary trigger:** held button while signing (simplest, most controllable) vs. auto-trigger via frame differencing vs. fixed 2-second window after a "go" signal.
+- **Training compute:** Colab free (T4) vs. Colab Pro vs. local GPU — affects iteration speed across multiple training experiments.
+- **Validation split:** held-out clips of training signers vs. held-out signers entirely. (Very different accuracy stories.)
+- **Auth:** localStorage vs. Supabase real auth.
 
 ## Out of scope
 

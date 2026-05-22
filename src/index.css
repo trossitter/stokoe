@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'StokoeTempo';
+  src: url('/fonts/StokoeTempoForWeb/stt_____-webfont.woff2') format('woff2'),
+       url('/fonts/StokoeTempoForWeb/stt_____-webfont.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

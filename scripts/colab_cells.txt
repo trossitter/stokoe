@@ -1,0 +1,99 @@
+==================== CELL 5 ====================
+
+from tensorflow import keras
+from tensorflow.keras import layers
+
+def cnn_block(x, filters, dropout=0.25):
+    x = layers.Conv2D(filters, 3, padding='same', use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D(2)(x)
+    x = layers.Dropout(dropout)(x)
+    return x
+
+frame_in = keras.Input(shape=(FRAME_SIZE, FRAME_SIZE, 3))
+x = cnn_block(frame_in, 32)
+x = cnn_block(x, 64)
+x = cnn_block(x, 128)
+x = layers.GlobalAveragePooling2D()(x)
+x = layers.Dense(128, activation='relu')(x)
+cnn = keras.Model(frame_in, x, name='frame_cnn')
+
+seq_in = keras.Input(shape=(SEQ_LEN, FRAME_SIZE, FRAME_SIZE, 3), name='sequence')
+feats = layers.TimeDistributed(cnn)(seq_in)
+x = layers.LSTM(128, dropout=0.3, recurrent_dropout=0.2)(feats)
+x = layers.Dense(128, activation='relu')(x)
+x = layers.Dropout(0.4)(x)
+out = layers.Dense(NUM_CLASSES, activation='softmax', name='logits')(x)
+
+model = keras.Model(seq_in, out, name='stokoe_cnn_lstm')
+model.compile(
+    optimizer=keras.optimizers.Adam(LR),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy'],
+)
+model.summary()
+
+
+==================== CELL 6 ====================
+
+run_id = time.strftime('%Y%m%d_%H%M%S')
+ckpt = f'/content/stokoe_model_{run_id}.keras'
+
+callbacks = [
+    keras.callbacks.ModelCheckpoint(ckpt, monitor='val_accuracy', save_best_only=True, verbose=1),
+    keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=8, restore_best_weights=True, verbose=1),
+    keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=4, min_lr=1e-5, verbose=1),
+]
+
+history = model.fit(
+    X_train, y_train,
+    validation_data=(X_val, y_val),
+    epochs=EPOCHS,
+    batch_size=BATCH,
+    callbacks=callbacks,
+    shuffle=True,
+)
+
+
+==================== CELL 7 — evaluate ====================
+
+loss, acc = model.evaluate(X_test, y_test, batch_size=BATCH, verbose=0)
+print(f'Test accuracy: {acc:.4f}  Loss: {loss:.4f}')
+
+preds = model.predict(X_test, batch_size=BATCH, verbose=0).argmax(axis=1)
+per_class = defaultdict(lambda: [0, 0])
+for true, pred in zip(y_test, preds):
+    per_class[labels[true]][1] += 1
+    if true == pred:
+        per_class[labels[true]][0] += 1
+
+print('\nPer-class accuracy:')
+for label in sorted(per_class):
+    c, t = per_class[label]
+    print(f'  {label:20s}  {c}/{t}  ({100*c//t}%)')
+
+
+==================== CELL 8 — export ====================
+
+import json
+import subprocess
+
+tfjs_out = f'/content/stokoe_tfjs_{run_id}'
+
+!tensorflowjs_converter --input_format=keras {ckpt} {tfjs_out}
+
+meta = {
+    'labels': {str(i): l for i, l in enumerate(labels)},
+    'seq_len': SEQ_LEN,
+    'frame_size': FRAME_SIZE,
+    'confidence_threshold': CONFIDENCE_THRESHOLD,
+    'test_accuracy': round(float(acc), 4),
+    'run_id': run_id,
+}
+pathlib.Path(tfjs_out + '/meta.json').write_text(json.dumps(meta, indent=2))
+
+zip_out = f'/content/stokoe_model_{run_id}.zip'
+!zip -r {zip_out} {tfjs_out}
+!cp {zip_out} '/content/drive/MyDrive/Stokoe Project/'
+print(f'Saved to Drive: stokoe_model_{run_id}.zip')

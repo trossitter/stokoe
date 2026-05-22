@@ -1,18 +1,33 @@
-// TODO: load and run the team-trained sign classifier in the browser.
-// Per spec (Requirement 7), no pretrained models — weights and architecture
-// must be produced by this project. This module will expose:
-//   - loadModel(): Promise<SignClassifier>
-//   - classify(frames): Promise<{ label: string; confidence: number }>
-// Pass/fail decisions (Requirement 9) compare confidence against documented
-// per-sign thresholds defined alongside the trained model artifact.
+export type HintKey = "handshape" | "movement" | "location" | "orientation" | "framing";
+
 export type SignPrediction = {
-  label: string;
+  passed: boolean;
   confidence: number;
+  hintKey: HintKey | null; // null on pass
 };
 
+// Mock classifier — returns a plausible result after a short delay.
+// Replace this function body when the trained TFJS model artifact lands in public/model/.
+// The real implementation will:
+//   1. Load the TFJS model (once, cached)
+//   2. Preprocess frames: crop to ROI, resize to 64×64, normalise
+//   3. Run inference: CNN per frame → LSTM → softmax
+//   4. Compare predicted label + confidence against per-sign thresholds
+//   5. Return hintKey derived from which parameter score was lowest
 export async function classifyAttempt(
   _frames: ImageData[],
-): Promise<SignPrediction | null> {
-  // Placeholder until the trained model artifact exists.
-  return null;
+  _signId: string,
+): Promise<SignPrediction> {
+  // Simulate inference latency
+  await new Promise((r) => setTimeout(r, 1200));
+
+  const confidence = 0.45 + Math.random() * 0.5; // 0.45 – 0.95
+  const passed = confidence >= 0.72;
+
+  const hintKeys: HintKey[] = ["handshape", "movement", "location", "orientation", "framing"];
+  const hintKey: HintKey | null = passed
+    ? null
+    : hintKeys[Math.floor(Math.random() * hintKeys.length)];
+
+  return { passed, confidence, hintKey };
 }
