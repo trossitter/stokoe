@@ -14,8 +14,11 @@ const HOLD_FIRE_MS = 500;
 const HOLD_X_THRESHOLD = 0.58; // right portion of frame
 
 type Opts = {
+  // Override displacement threshold (default DISPLACE_THRESHOLD).
+  displaceThreshold?: number;
+  // Disable the velocity/flick trigger (slower, more deliberate gestures only).
+  noFlick?: boolean;
   // Also fire if the hand stays on the right side of the frame for HOLD_FIRE_MS.
-  // Good for confirmation overlays where pointing = intent.
   alsoFireOnPosition?: boolean;
 };
 
@@ -34,6 +37,8 @@ export function useHandSwipe(
   useEffect(() => {
     if (!enabled) return;
 
+    const displaceThreshold = opts?.displaceThreshold ?? DISPLACE_THRESHOLD;
+    const noFlick = opts?.noFlick ?? false;
     const alsoFireOnPosition = opts?.alsoFireOnPosition ?? false;
     let alive = true;
     const samples: Array<{ x: number; ts: number }> = [];
@@ -75,13 +80,13 @@ export function useHandSwipe(
               // Displacement trigger
               if (samples.length >= MIN_SAMPLES) {
                 const delta = samples[samples.length - 1].x - samples[0].x;
-                if (delta > DISPLACE_THRESHOLD) {
+                if (delta > displaceThreshold) {
                   fired = true;
                   callbackRef.current();
                 }
               }
-              // Velocity / flick trigger
-              if (!fired && samples.length >= FLICK_LOOKBACK) {
+              // Velocity / flick trigger (disabled when noFlick)
+              if (!fired && !noFlick && samples.length >= FLICK_LOOKBACK) {
                 const tail = samples.slice(-FLICK_LOOKBACK);
                 const dt = tail[tail.length - 1].ts - tail[0].ts;
                 if (dt > 0) {

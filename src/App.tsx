@@ -94,8 +94,8 @@ export default function App() {
 
   // First swipe → show confirmation
   useHandSwipe(videoRef, sessionState === "result" && !pendingNext, handleSwipeInResult);
-  // On confirmation: swipe, flick, OR hold hand on right side → advance
-  useHandSwipe(videoRef, pendingNext, handleNext, { alsoFireOnPosition: true });
+  // On confirmation: slow deliberate arc only — no flick, no position-hold, higher bar
+  useHandSwipe(videoRef, pendingNext, handleNext, { displaceThreshold: 0.38, noFlick: true });
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 

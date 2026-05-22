@@ -5,7 +5,7 @@
 
 ## What It Is
 
-Stokoe is a browser-based ASL vocabulary tutor built for iPad. A student faces their camera, the system watches their hand, and gives them real feedback on whether they signed correctly — not just pass/fail, but which phonological parameter was off and how to fix it.
+Stokoe is a browser-based ASL vocabulary tutor. It runs in any modern browser — laptop, desktop, or tablet. A student faces their camera, the system watches their hand, and gives them real feedback on whether they signed correctly — not just pass/fail, but which phonological parameter was off and how to fix it.
 
 The name is for William Stokoe, the linguist who proved in 1960 that American Sign Language is a true language with its own grammar, and who developed the notation system the app is built on.
 
