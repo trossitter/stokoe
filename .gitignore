@@ -6,7 +6,7 @@ data/*.log
 data/hand_landmarker.task
 public/hand_landmarker.task
 public/wasm/
-model/
+/model/
 
 # Logs
 logs

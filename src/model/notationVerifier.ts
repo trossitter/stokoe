@@ -232,7 +232,7 @@ function checkSig(
 export async function verifyNotation(
   frames: KeypointFrame[],
   notation: NotationEntry,
-  dezPredictor: ((landmarks: Float32Array) => string) | null,
+  dezPredictor: ((landmarks: Float32Array) => Promise<string>) | null,
   faceLandmarks: Landmark[] | null,
 ): Promise<VerificationResult> {
 
@@ -259,7 +259,7 @@ export async function verifyNotation(
   let dezConfidence = 0.7;
   if (dezPredictor) {
     const normalized = normalizeLandmarks(handLm);
-    const predictedDez = dezPredictor(normalized);
+    const predictedDez = await dezPredictor(normalized);
     dezPassed = predictedDez === notation.dez;
     dezConfidence = dezPassed ? 0.8 : 0.35;
   }
