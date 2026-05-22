@@ -12,8 +12,8 @@ export async function getHandLandmarker(): Promise<HandLandmarker> {
     _landmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: { modelAssetPath: "/hand_landmarker.task", delegate: "GPU" },
       numHands: 1,
-      minHandDetectionConfidence: 0.4,
-      minHandPresenceConfidence: 0.3,
+      minHandDetectionConfidence: 0.3,
+      minHandPresenceConfidence: 0.2,
       runningMode: "IMAGE",
     });
     return _landmarker;

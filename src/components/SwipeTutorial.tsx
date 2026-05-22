@@ -144,10 +144,21 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
       : "transform 0.22s ease-out",
   };
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    // Ignore clicks on the arrow buttons themselves (they stopPropagation)
+    const mid = (e.currentTarget as HTMLElement).offsetWidth / 2;
+    if (e.clientX >= mid) {
+      doSwipe("right");
+    } else if (index > 0) {
+      doSwipe("left");
+    }
+  };
+
   return (
     <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center select-none"
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center select-none cursor-pointer"
       style={{ background: "rgba(2, 6, 23, 0.88)", backdropFilter: "blur(12px)" }}
+      onClick={handleOverlayClick}
     >
       {/* Progress dots */}
       <div className="flex gap-2 mb-10">
@@ -162,18 +173,26 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
         ))}
       </div>
 
-      {/* Left / right zone arrows */}
-      <div className="absolute inset-0 flex items-center justify-between px-5 pointer-events-none">
-        <div className={`text-4xl transition-all duration-150 ${
-          index > 0 && handSide === "left"
-            ? "text-white opacity-100 scale-125"
-            : "text-slate-700 opacity-60 scale-100"
-        }`}>←</div>
-        <div className={`text-4xl transition-all duration-150 ${
-          handSide === "right"
-            ? "text-white opacity-100 scale-125"
-            : "text-slate-700 opacity-60 scale-100"
-        }`}>→</div>
+      {/* Left / right zone arrows — clickable, stop propagation so overlay split still works */}
+      <div className="absolute inset-0 flex items-center justify-between px-5">
+        <div
+          className={`text-4xl transition-all duration-150 cursor-pointer ${
+            index > 0 && handSide === "left"
+              ? "text-white opacity-100 scale-125"
+              : index > 0
+              ? "text-slate-600 opacity-70 scale-100 hover:text-slate-400"
+              : "text-slate-800 opacity-30 scale-100"
+          }`}
+          onClick={(e) => { e.stopPropagation(); if (index > 0) doSwipe("left"); }}
+        >←</div>
+        <div
+          className={`text-4xl transition-all duration-150 cursor-pointer ${
+            handSide === "right"
+              ? "text-white opacity-100 scale-125"
+              : "text-slate-600 opacity-70 scale-100 hover:text-slate-400"
+          }`}
+          onClick={(e) => { e.stopPropagation(); doSwipe("right"); }}
+        >→</div>
       </div>
 
       {/* Card */}
@@ -182,15 +201,13 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
         <p className="text-slate-600 text-sm leading-relaxed">{card.body}</p>
       </div>
 
-      {/* Hand status */}
+      {/* Status */}
       <p className="mt-8 text-xs transition-colors duration-200 text-center px-4" style={{
         color: handSide !== null ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
       }}>
         {handSide !== null
-          ? isLast
-            ? "swipe your hand right to start →"
-            : "swipe your hand right to continue →"
-          : "show your hand to swipe"}
+          ? isLast ? "swipe or click right to start →" : "swipe or click right to continue →"
+          : "click right — or show your hand and swipe"}
       </p>
     </div>
   );
