@@ -1,33 +1,46 @@
+import { detectLandmarks } from "./handLandmarker";
+import { verifyNotation } from "./notationVerifier";
+import type { KeypointFrame } from "./notationVerifier";
+import { NOTATION } from "../data/notation";
+
 export type HintKey = "handshape" | "movement" | "location" | "orientation" | "framing";
 
 export type SignPrediction = {
   passed: boolean;
   confidence: number;
-  hintKey: HintKey | null; // null on pass
+  hintKey: HintKey | null;
 };
 
-// Mock classifier — returns a plausible result after a short delay.
-// Replace this function body when the trained TFJS model artifact lands in public/model/.
-// The real implementation will:
-//   1. Load the TFJS model (once, cached)
-//   2. Preprocess frames: crop to ROI, resize to 64×64, normalise
-//   3. Run inference: CNN per frame → LSTM → softmax
-//   4. Compare predicted label + confidence against per-sign thresholds
-//   5. Return hintKey derived from which parameter score was lowest
+const PARAM_TO_HINT: Record<string, HintKey> = {
+  tab: "location",
+  dez: "handshape",
+  sig: "movement",
+  framing: "framing",
+};
+
 export async function classifyAttempt(
-  _frames: ImageData[],
-  _signId: string,
+  frames: ImageData[],
+  signId: string,
 ): Promise<SignPrediction> {
-  // Simulate inference latency
-  await new Promise((r) => setTimeout(r, 1200));
+  const notation = NOTATION[signId];
 
-  const confidence = 0.45 + Math.random() * 0.5; // 0.45 – 0.95
-  const passed = confidence >= 0.72;
+  if (!notation) {
+    return { passed: false, confidence: 0, hintKey: "framing" };
+  }
 
-  const hintKeys: HintKey[] = ["handshape", "movement", "location", "orientation", "framing"];
-  const hintKey: HintKey | null = passed
-    ? null
-    : hintKeys[Math.floor(Math.random() * hintKeys.length)];
+  // Extract landmarks from each captured frame
+  const keypointFrames: KeypointFrame[] = await Promise.all(
+    frames.map(async (frame, i): Promise<KeypointFrame> => {
+      const landmarks = await detectLandmarks(frame);
+      return { landmarks, timestamp: i * 100 };
+    }),
+  );
 
-  return { passed, confidence, hintKey };
+  const result = await verifyNotation(keypointFrames, notation, null, null);
+
+  const hintKey: HintKey | null = result.failedParameter
+    ? (PARAM_TO_HINT[result.failedParameter] ?? null)
+    : null;
+
+  return { passed: result.passed, confidence: result.confidence, hintKey };
 }
