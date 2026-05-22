@@ -80,20 +80,23 @@ export function SignPrompt({
           </div>
         )}
         {sessionState === "result" && (
-          <>
-            <button
-              onClick={onRetry}
-              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-            >
-              Try again
-            </button>
-            <button
-              onClick={onNext}
-              className="flex-1 py-3 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors"
-            >
-              Next sign →
-            </button>
-          </>
+          <div className="flex-1 flex flex-col gap-1.5">
+            <div className="flex gap-2">
+              <button
+                onClick={onRetry}
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                Try again
+              </button>
+              <button
+                onClick={onNext}
+                className="flex-1 py-3 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors"
+              >
+                Next sign →
+              </button>
+            </div>
+            <p className="text-center text-xs text-slate-400">or swipe your hand right →</p>
+          </div>
         )}
       </div>
     </section>

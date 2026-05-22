@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useHandSwipe } from "./hooks/useHandSwipe";
 import { VOCAB } from "./data/vocab";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
@@ -72,6 +73,9 @@ export default function App() {
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
   }, []);
+
+  // Rightward hand swipe during result → advance to next sign
+  useHandSwipe(videoRef, sessionState === "result", handleNext);
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
