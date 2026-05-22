@@ -9,6 +9,8 @@ export type Progress = Record<string, SignRecord>;
 export type UserProfile = {
   name: string;
   createdAt: number;
+  powerUser: boolean;
+  tutorialDone: boolean;
 };
 
 const PROFILE_KEY = "stokoe:profile";
@@ -19,10 +21,16 @@ export function getProfile(): UserProfile | null {
   return raw ? JSON.parse(raw) : null;
 }
 
-export function saveProfile(name: string): UserProfile {
-  const profile: UserProfile = { name, createdAt: Date.now() };
+export function saveProfile(name: string, powerUser: boolean): UserProfile {
+  const profile: UserProfile = { name, createdAt: Date.now(), powerUser, tutorialDone: powerUser };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   return profile;
+}
+
+export function markTutorialDone(profile: UserProfile): UserProfile {
+  const updated = { ...profile, tutorialDone: true };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
+  return updated;
 }
 
 export function getProgress(): Progress {

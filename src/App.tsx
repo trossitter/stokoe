@@ -2,12 +2,13 @@ import { useCallback, useState } from "react";
 import { VOCAB } from "./data/vocab";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
-import { getProfile, saveProfile, getProgress, recordAttempt } from "./store/progress";
+import { getProfile, saveProfile, markTutorialDone, getProgress, recordAttempt } from "./store/progress";
 import type { Progress, UserProfile } from "./store/progress";
 import { WebcamView } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
+import { SwipeTutorial } from "./components/SwipeTutorial";
 
 type SessionState = "idle" | "evaluating" | "result";
 
@@ -22,7 +23,14 @@ export default function App() {
 
   const item = VOCAB[vocabIndex % VOCAB.length];
 
-  const handleLogin = (name: string) => setProfile(saveProfile(name));
+  const handleLogin = (name: string, powerUser: boolean) => {
+    setProfile(saveProfile(name, powerUser));
+  };
+
+  const handleTutorialComplete = useCallback(() => {
+    if (!profile) return;
+    setProfile(markTutorialDone(profile));
+  }, [profile]);
 
   const handleFramesReady = useCallback(
     async (frames: ImageData[]) => {
@@ -56,13 +64,14 @@ export default function App() {
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
-  // Extend SessionState to include "recording" for child components
+  const showTutorial = !profile.tutorialDone;
+
   const displayState: "idle" | "recording" | "evaluating" | "result" =
     sessionState === "idle" ? "idle" :
     sessionState === "evaluating" ? "evaluating" : "result";
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden relative">
       <header className="px-5 py-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <img src="/logo.webp" alt="Stokoe" className="h-7 w-7 rounded" />
@@ -91,7 +100,7 @@ export default function App() {
             vocabTotal={VOCAB.length}
           />
           <WebcamView
-            sessionState={displayState}
+            sessionState={showTutorial ? "evaluating" : displayState}
             onFramesReady={handleFramesReady}
           />
         </div>
@@ -104,6 +113,8 @@ export default function App() {
           progress={progress}
         />
       </main>
+
+      {showTutorial && <SwipeTutorial onComplete={handleTutorialComplete} />}
     </div>
   );
 }
