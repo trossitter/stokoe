@@ -9,6 +9,16 @@ const FLICK_DISPLACE_FLOOR = 0.08;
 const FLICK_LOOKBACK = 3;
 const SAMPLE_MS = 90;
 
+// How long (ms) a hand must sit on the right side to trigger a position-hold fire
+const HOLD_FIRE_MS = 500;
+const HOLD_X_THRESHOLD = 0.58; // right portion of frame
+
+type Opts = {
+  // Also fire if the hand stays on the right side of the frame for HOLD_FIRE_MS.
+  // Good for confirmation overlays where pointing = intent.
+  alsoFireOnPosition?: boolean;
+};
+
 // Detects a rightward hand swipe from the live camera feed.
 // Fires onSwipeRight once per continuous hand presence — resets when
 // the hand leaves the frame, so a second swipe is possible after re-entry.
@@ -16,6 +26,7 @@ export function useHandSwipe(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   enabled: boolean,
   onSwipeRight: () => void,
+  opts?: Opts,
 ): void {
   const callbackRef = useRef(onSwipeRight);
   useEffect(() => { callbackRef.current = onSwipeRight; }, [onSwipeRight]);
@@ -23,10 +34,12 @@ export function useHandSwipe(
   useEffect(() => {
     if (!enabled) return;
 
+    const alsoFireOnPosition = opts?.alsoFireOnPosition ?? false;
     let alive = true;
     const samples: Array<{ x: number; ts: number }> = [];
     let lastSample = 0;
     let fired = false;
+    let rightSideSince: number | null = null; // for position-hold detection
     const canvas = document.createElement("canvas");
 
     const tick = async (now: number) => {
@@ -80,11 +93,24 @@ export function useHandSwipe(
                   }
                 }
               }
+              // Position-hold trigger (opt-in) — pointing or resting on right side
+              if (!fired && alsoFireOnPosition) {
+                if (wx >= HOLD_X_THRESHOLD) {
+                  if (rightSideSince === null) rightSideSince = now;
+                  else if (now - rightSideSince >= HOLD_FIRE_MS) {
+                    fired = true;
+                    callbackRef.current();
+                  }
+                } else {
+                  rightSideSince = null;
+                }
+              }
             }
           } else {
             // Hand left frame — allow a fresh swipe on re-entry
             samples.length = 0;
             fired = false;
+            rightSideSince = null;
           }
         } catch {
           // landmarker still loading

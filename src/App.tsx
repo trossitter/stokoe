@@ -92,7 +92,10 @@ export default function App() {
     setSessionState("idle");
   }, []);
 
-  useHandSwipe(videoRef, sessionState === "result", handleSwipeInResult);
+  // First swipe → show confirmation
+  useHandSwipe(videoRef, sessionState === "result" && !pendingNext, handleSwipeInResult);
+  // On confirmation: swipe, flick, OR hold hand on right side → advance
+  useHandSwipe(videoRef, pendingNext, handleNext, { alsoFireOnPosition: true });
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
