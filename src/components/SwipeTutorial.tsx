@@ -22,11 +22,21 @@ const CARDS: Card[] = [
   },
 ];
 
-// Swipe detection parameters
-const SWIPE_THRESHOLD = 0.22;  // fraction of frame width
+// Swipe detection — two independent triggers (OR'd)
+//
+// 1. Displacement: slow deliberate swipe
+const DISPLACE_THRESHOLD = 0.22;  // fraction of frame width over TRACK_WINDOW_MS
 const TRACK_WINDOW_MS = 650;
-const SAMPLE_MS = 90;
 const MIN_SAMPLES = 5;
+//
+// 2. Velocity (flick): fast movement over a short window
+//    velocity = Δx / Δt in normalised-units / ms
+//    threshold ≈ 1.2 frame-widths per second = 0.0012 /ms
+const FLICK_VELOCITY = 0.0012;    // normalised units per ms
+const FLICK_DISPLACE_FLOOR = 0.08; // minimum total Δx — noise guard
+const FLICK_LOOKBACK = 3;          // samples; ~270ms at 90ms cadence
+//
+const SAMPLE_MS = 90;
 
 type Props = {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -104,14 +114,34 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
               const cutoff = now - TRACK_WINDOW_MS;
               samplesRef.current = samplesRef.current.filter(s => s.ts > cutoff);
 
-              if (samplesRef.current.length >= MIN_SAMPLES) {
-                const first = samplesRef.current[0].x;
-                const last = samplesRef.current[samplesRef.current.length - 1].x;
-                const delta = last - first;
-                if (delta > SWIPE_THRESHOLD) {
-                  doSwipe("right");
-                } else if (delta < -SWIPE_THRESHOLD) {
-                  doSwipe("left");
+              const s = samplesRef.current;
+
+              // ── Displacement trigger ────────────────────────────────────
+              if (s.length >= MIN_SAMPLES) {
+                const delta = s[s.length - 1].x - s[0].x;
+                if (delta > DISPLACE_THRESHOLD) { doSwipe("right"); }
+                else if (delta < -DISPLACE_THRESHOLD) { doSwipe("left"); }
+              }
+
+              // ── Velocity / flick trigger ────────────────────────────────
+              if (!flyingRef.current && s.length >= FLICK_LOOKBACK) {
+                const tail = s.slice(-FLICK_LOOKBACK);
+                const dt = tail[tail.length - 1].ts - tail[0].ts;
+                if (dt > 0) {
+                  const dx = tail[tail.length - 1].x - tail[0].x;
+                  const velocity = dx / dt; // normalised units/ms
+                  // All samples must move in the same direction (monotonic) —
+                  // filters out jitter that happens to be fast
+                  const monotonic = tail.every(
+                    (_, i) => i === 0 || (tail[i].x - tail[i - 1].x) * dx >= 0,
+                  );
+                  if (
+                    monotonic &&
+                    Math.abs(dx) >= FLICK_DISPLACE_FLOOR &&
+                    Math.abs(velocity) >= FLICK_VELOCITY
+                  ) {
+                    doSwipe(dx > 0 ? "right" : "left");
+                  }
                 }
               }
             }
