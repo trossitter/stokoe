@@ -46,8 +46,8 @@ export function WebcamView({ videoRef, sessionState, onFramesReady }: Props) {
       const rw = ROI.w * w;
       const rh = ROI.h * h;
 
-      // Dim outside ROI
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      // Nearly-opaque outside ROI — students see only their hand, not their face/background
+      ctx.fillStyle = "rgba(0,0,0,0.93)";
       ctx.fillRect(0, 0, w, ry);
       ctx.fillRect(0, ry + rh, w, h - ry - rh);
       ctx.fillRect(0, ry, rx, rh);
@@ -98,7 +98,7 @@ export function WebcamView({ videoRef, sessionState, onFramesReady }: Props) {
         ctx.fillStyle = "rgba(255,255,255,0.65)";
         ctx.font = "12px system-ui";
         ctx.textAlign = "center";
-        ctx.fillText("Place both hands in the box to begin", rx + rw / 2, ry + rh + 16);
+        ctx.fillText("Place your hand in the box to begin", rx + rw / 2, ry + rh + 16);
         ctx.textAlign = "left";
       } else if (triggerState === "detecting") {
         ctx.fillStyle = "rgba(16,185,129,0.8)";

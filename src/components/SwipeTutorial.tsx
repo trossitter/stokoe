@@ -187,7 +187,7 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
   return (
     <div
       className="absolute inset-0 z-20 flex flex-col items-center justify-center select-none cursor-pointer"
-      style={{ background: "rgba(2, 6, 23, 0.88)", backdropFilter: "blur(12px)" }}
+      style={{ background: "rgba(2, 6, 23, 0.88)", backdropFilter: "blur(24px) brightness(0.6)" }}
       onClick={handleOverlayClick}
     >
       {/* Progress dots */}

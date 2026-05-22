@@ -12,9 +12,19 @@ import { SwipeTutorial } from "./components/SwipeTutorial";
 
 type SessionState = "idle" | "evaluating" | "result";
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
+  const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [passed, setPassed] = useState<boolean | null>(null);
@@ -22,7 +32,7 @@ export default function App() {
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
 
-  const item = VOCAB[vocabIndex % VOCAB.length];
+  const item = VOCAB[order[vocabIndex % VOCAB.length]];
 
   const handleLogin = (name: string, powerUser: boolean) => {
     setProfile(saveProfile(name, powerUser));
