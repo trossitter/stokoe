@@ -276,6 +276,12 @@
     <li><span>Goldilocks passage.</span> Sourced from existing ASL Stokoe notation corpus document.</li>
     <li><span>Red Riding Hood &amp; Cinderella passages.</span> Generated from Stokoe symbol table (Mandel 1993). Signs marked * verified against project training vocabulary. Unmarked signs are phonologically accurate approximations, not corpus-verified.</li>
   </ol>
+  <h2 style="margin-top: 24px;">Engineering Disclosure</h2>
+  <ol>
+    <li><span>Training corpus.</span> Curated entirely by the engineering team. Source material drawn from ASL Citizen (Microsoft Research) and the ASL-LEX phonological database. All filtering criteria, sign selection methodology, and vocabulary decisions are documented and owned by the project team. No third-party annotation or pre-labeled sign recognition data was used without explicit review.</li>
+    <li><span>Model architecture.</span> The sign recognition system was designed and trained from scratch by the engineering team. Evaluation is decomposed along Stokoe parameters: location (Tab) assessed by rule against body landmarks; handshape (Dez) assessed by a classifier trained from scratch on curated keypoint data; movement (Sig) assessed by rule against landmark sequences. No component of sign recognition operates as a black box. Each decision is attributable to a documented parameter, threshold, or rule.</li>
+    <li><span>Pre-trained components.</span> Hand landmark detection uses MediaPipe Hands (Google). This component extracts geometric coordinates only; it performs no sign classification or semantic interpretation. Its use is consistent with the project requirement that sign <em>recognition</em> be trained from scratch, as landmark detection is a geometric measurement, not a sign recognition system.</li>
+  </ol>
 </div>
 
 </body>
