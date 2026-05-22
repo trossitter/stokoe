@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stokoe Notation — Fairy Tale Passages</title>
+  <title>Stokoe Notation — Narrative Passages</title>
   <style>
     @font-face {
       font-family: 'StokoeTempo';
@@ -14,339 +14,269 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --amber:  #f59e0b;
-      --rose:   #f43f5e;
-      --violet: #8b5cf6;
-      --cyan:   #00eeff;
-      --bg:     #000008;
-    }
-
     body {
-      background: var(--bg);
-      color: #d0e8ff;
-      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
-      min-height: 100vh;
-      padding: 0 0 80px;
+      background: #fff;
+      color: #000;
+      font-family: "Times New Roman", Times, serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 72px 48px 96px;
     }
 
-    /* ── Cover ── */
-    .cover {
-      text-align: center;
-      padding: 72px 24px 60px;
-      border-bottom: 1px solid #0a1a2a;
+    /* ── Masthead ── */
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #000;
+      padding-bottom: 20px;
+      margin-bottom: 48px;
     }
-    .cover-label {
-      font-size: 10px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: #1a4060;
-      margin-bottom: 20px;
-    }
-    .cover-title {
-      font-family: "StokoeTempo", monospace;
-      font-size: 96px;
-      line-height: 1;
-      color: #fff;
-      text-shadow:
-        0 0 12px var(--cyan),
-        0 0 30px #00aaff88,
-        0 0 60px #0066cc33;
-      letter-spacing: 0.08em;
-      margin-bottom: 28px;
-    }
-    .cover-subtitle {
+    .masthead-left h1 {
       font-size: 13px;
-      letter-spacing: 0.15em;
+      font-weight: normal;
+      letter-spacing: 0.25em;
       text-transform: uppercase;
-      color: var(--cyan);
-      text-shadow: 0 0 16px #00eeff55;
-      margin-bottom: 12px;
+      margin-bottom: 5px;
     }
-    .cover-desc {
+    .masthead-left p {
+      font-size: 10px;
+      color: #555;
+      line-height: 1.6;
+    }
+    .masthead-right {
       font-size: 11px;
-      color: #334455;
-      letter-spacing: 0.08em;
-      line-height: 1.8;
-      max-width: 600px;
-      margin: 0 auto;
+      font-style: italic;
+      color: #000;
+      white-space: nowrap;
+      padding-left: 32px;
+      flex-shrink: 0;
     }
 
-    /* ── Grid ── */
-    .stories {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 0;
-      max-width: 1440px;
-      margin: 0 auto;
-    }
-    @media (max-width: 1000px) {
-      .stories { grid-template-columns: 1fr; }
-    }
-
-    /* ── Story card ── */
-    .story {
-      border-right: 1px solid #060f18;
-    }
-    .story:last-child { border-right: none; }
-
-    .story-header {
-      padding: 24px 28px 18px;
-      border-bottom: 1px solid #060f18;
-      position: sticky;
-      top: 0;
-      background: var(--bg);
-      z-index: 10;
-    }
-    .story-header::before {
-      content: "";
-      display: block;
-      height: 3px;
-      border-radius: 0 0 2px 2px;
-      margin-bottom: 14px;
-      margin-left: -28px;
-      width: calc(100% + 56px);
-    }
-    .story-0 .story-header::before { background: var(--amber); box-shadow: 0 0 14px var(--amber); }
-    .story-1 .story-header::before { background: var(--rose);  box-shadow: 0 0 14px var(--rose); }
-    .story-2 .story-header::before { background: var(--violet);box-shadow: 0 0 14px var(--violet); }
+    /* ── Story ── */
+    .story { margin-bottom: 56px; }
 
     .story-title {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .story-0 .story-title { color: var(--amber); }
-    .story-1 .story-title { color: var(--rose); }
-    .story-2 .story-title { color: var(--violet); }
-
-    .story-desc {
-      font-size: 9.5px;
-      color: #1e3346;
-      letter-spacing: 0.06em;
-      font-style: italic;
+      font-size: 52px;
+      font-weight: normal;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 1.05;
+      border-bottom: 1px solid #000;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
     }
 
-    /* ── Beats ── */
     .beat {
       display: grid;
-      grid-template-columns: 20px 1fr;
-      gap: 0 14px;
-      padding: 22px 28px;
-      border-bottom: 1px solid #060f18;
+      grid-template-columns: 28px 1fr;
+      gap: 0 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid #ddd;
       align-items: start;
-      transition: background 0.12s;
     }
     .beat:last-child { border-bottom: none; }
-    .beat:hover { background: #03080f; }
 
     .beat-num {
       font-size: 9px;
-      color: #1a2a3a;
-      letter-spacing: 0.05em;
-      padding-top: 6px;
-      text-align: right;
-    }
-
-    .beat-content { min-width: 0; }
-
-    .notation {
-      font-family: "StokoeTempo", monospace;
-      font-size: 72px;
-      line-height: 1;
-      color: #fff;
-      text-shadow:
-        0 0 8px var(--cyan),
-        0 0 20px #00aaff66,
-        0 0 40px #0055cc33;
-      margin-bottom: 10px;
-      min-height: 76px;
-      word-break: break-all;
+      color: #999;
+      padding-top: 10px;
     }
 
     .gloss {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--cyan);
-      margin-bottom: 5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+      font-size: 52px;
+      font-weight: normal;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 1.05;
+      color: #000;
+      margin-bottom: 8px;
     }
-
-    .badge {
-      font-size: 7.5px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      border-radius: 2px;
-      padding: 1px 5px;
-    }
-    .badge-v { color: #00cc88; background: #001a0f; border: 1px solid #004d33; }
-    .badge-a { color: #d97706; background: #180e00; border: 1px solid #4d2e00; }
-    .badge-s { color: #60a5fa; background: #00061a; border: 1px solid #1a3466; }
 
     .description {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.55;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+
+    .notation {
+      font-family: "StokoeTempo", monospace;
+      font-size: 18px;
+      line-height: 1;
+      color: #888;
+      letter-spacing: 0.06em;
+    }
+
+    .gloss-note {
+      font-size: 11px;
+      font-style: italic;
+      color: #999;
+    }
+
+    /* ── Works Cited ── */
+    .works-cited {
+      border-top: 1px solid #000;
+      padding-top: 20px;
+      margin-top: 48px;
+    }
+    .works-cited h2 {
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .works-cited ol {
+      padding-left: 20px;
+    }
+    .works-cited li {
       font-size: 9.5px;
-      color: #1e3346;
-      letter-spacing: 0.04em;
-      line-height: 1.6;
+      color: #444;
+      line-height: 1.85;
+      font-style: italic;
+    }
+    .works-cited li span {
+      font-style: normal;
     }
 
-    /* ── Footer ── */
-    footer {
-      margin-top: 60px;
-      padding: 0 28px;
-      max-width: 1440px;
-      margin-left: auto;
-      margin-right: auto;
-      border-top: 1px solid #060f18;
-      padding-top: 24px;
-    }
-    footer p {
-      font-size: 9px;
-      color: #112233;
-      letter-spacing: 0.08em;
-      line-height: 2;
-    }
-
-    /* ── Print ── */
     @media print {
-      body { background: #000 !important; -webkit-print-color-adjust: exact; }
-      .story-header { position: static; }
-      .story { page-break-inside: avoid; }
-      .stories { grid-template-columns: 1fr 1fr 1fr; }
+      body { padding: 48px 40px; }
+      .beat { page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
 
-<div class="cover">
-  <div class="cover-label">William Stokoe · 1960</div>
-  <div class="cover-title">B0G</div>
-  <div class="cover-subtitle">ASL Stokoe Notation — Narrative Passages</div>
-  <div class="cover-desc">
-    Stokoe notation encodes every sign as three parameters: Tab (location), Dez (handshape), Sig (movement).<br>
-    These passages demonstrate that the system describes not just vocabulary, but continuous narrative.
+<div class="masthead">
+  <div class="masthead-left">
+    <h1>Stokoe Notation &mdash; Narrative Passages</h1>
+    <p>
+      Three fairy tale passages encoded in Stokoe (1960) notation.<br>
+      Rendered in StokoeTempo typeface &mdash; Angus Grieve-Smith, Gallaudet University.
+    </p>
   </div>
+  <div class="masthead-right">Designed by Thalia</div>
 </div>
 
-<div class="stories">
+<div class="story">
+  <div class="story-title">I. Goldilocks &amp; the Three Bears</div>
 
-  <div class="story story-0">
-    <div class="story-header">
-      <div class="story-title">Goldilocks &amp; the Three Bears</div>
-      <div class="story-desc">Sourced from ASL Stokoe corpus document</div>
-    </div>
-    <div class="beat"><div class="beat-num">1</div><div class="beat-content">
-      <div class="notation">BɑBɑz~</div>
-      <div class="gloss">STORY <span class="badge badge-s">corpus</span></div>
-      <div class="description">Neutral (ɑ), bilateral flat-B, wrist-oscillate (z~)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">2</div><div class="beat-content">
-      <div class="notation">[]√C‡√Cv ×•</div>
-      <div class="gloss">THREE BEARS <span class="badge badge-s">corpus</span></div>
-      <div class="description">Bilateral curved-C, contact · repeated</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">3</div><div class="beat-content">
-      <div class="notation">Bɑ√Bʌω</div>
-      <div class="gloss">DEEP WOODS <span class="badge badge-s">corpus</span></div>
-      <div class="description">Neutral (ɑ) to upper (ʌ), flat-B, loose-wiggle (ω)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">4</div><div class="beat-content">
-      <div class="notation">BʌˡBʌ÷</div>
-      <div class="gloss">HOUSE <span class="badge badge-s">corpus</span></div>
-      <div class="description">Upper space (ʌ), bilateral B-hands, repeated contact (÷)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">5</div><div class="beat-content">
-      <div class="notation">B⊤Vɒv•</div>
-      <div class="gloss">READ <span class="badge badge-s">corpus</span></div>
-      <div class="description">Overhead (⊤), V-hand over flat palm, downward brush (v•)</div>
-    </div></div>
-  </div>
+  <div class="beat"><div class="beat-num">1</div><div>
+    <div class="gloss">Story</div>
+    <div class="description">Neutral space &middot; bilateral flat-B handshape &middot; wrist-oscillate</div>
+    <div class="notation">BɑBɑz~</div>
+  </div></div>
 
-  <div class="story story-1">
-    <div class="story-header">
-      <div class="story-title">Little Red Riding Hood</div>
-      <div class="story-desc">Generated from Stokoe symbol table (Mandel 1993)</div>
-    </div>
-    <div class="beat"><div class="beat-num">1</div><div class="beat-content">
-      <div class="notation">U5Dx</div>
-      <div class="gloss">MOTHER <span class="badge badge-v">vocab ✓</span></div>
-      <div class="description">Chin (U), spread-5 handshape, tap-contact (Dx)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">2</div><div class="beat-content">
-      <div class="notation">U1v</div>
-      <div class="gloss">RED <span class="badge badge-v">vocab ✓</span></div>
-      <div class="description">Lips (U), index finger (1), brush downward (v)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">3</div><div class="beat-content">
-      <div class="notation">BʌˡBʌ×</div>
-      <div class="gloss">WEAR CLOAK <span class="badge badge-a">~</span></div>
-      <div class="description">Upper space (ʌ), bilateral flat-B, contact across shoulders (×)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">4</div><div class="beat-content">
-      <div class="notation">P5z~</div>
-      <div class="gloss">FOREST <span class="badge badge-a">~</span></div>
-      <div class="description">Forehead-level (P), spread-5 (tree branches), wrist-oscillate (z~)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">5</div><div class="beat-content">
-      <div class="notation">}5×</div>
-      <div class="gloss">WOLF <span class="badge badge-a">~</span></div>
-      <div class="description">Cheek/temple (}), spread-claw handshape, contact at face (×)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">6</div><div class="beat-content">
-      <div class="notation">0A^B</div>
-      <div class="gloss">HELP <span class="badge badge-v">vocab ✓</span></div>
-      <div class="description">Neutral space (0), fist on flat palm, lifts upward (^)</div>
-    </div></div>
-  </div>
+  <div class="beat"><div class="beat-num">2</div><div>
+    <div class="gloss">Three Bears</div>
+    <div class="description">Bilateral curved-C handshape &middot; contact, repeated</div>
+    <div class="notation">[]√C‡√Cv ×•</div>
+  </div></div>
 
-  <div class="story story-2">
-    <div class="story-header">
-      <div class="story-title">Cinderella</div>
-      <div class="story-desc">Generated from Stokoe symbol table (Mandel 1993)</div>
-    </div>
-    <div class="beat"><div class="beat-num">1</div><div class="beat-content">
-      <div class="notation">0BɑBɑ÷</div>
-      <div class="gloss">WORK ALL-DAY <span class="badge badge-a">~</span></div>
-      <div class="description">Neutral (ɑ), bilateral flat-B, repeated contact (÷)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">2</div><div class="beat-content">
-      <div class="notation">0Vz~</div>
-      <div class="gloss">DANCE <span class="badge badge-a">~</span></div>
-      <div class="description">Neutral space (0), V-hand (two-finger leg classifier), side-oscillate (z~)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">3</div><div class="beat-content">
-      <div class="notation">0G></div>
-      <div class="gloss">GLASS / CLEAR <span class="badge badge-a">~</span></div>
-      <div class="description">Neutral (0), G-hand (index + thumb), forward motion (>) — follows corpus G></div>
-    </div></div>
-    <div class="beat"><div class="beat-num">4</div><div class="beat-content">
-      <div class="notation">0A×A×</div>
-      <div class="gloss">SLIPPER <span class="badge badge-a">~</span></div>
-      <div class="description">Neutral (0), bilateral fists (A), tap together (×)</div>
-    </div></div>
-    <div class="beat"><div class="beat-num">5</div><div class="beat-content">
-      <div class="notation">[]B^B^</div>
-      <div class="gloss">HAPPY <span class="badge badge-v">vocab ✓</span></div>
-      <div class="description">Chest ([ ]), flat-B hands, brush upward twice (^)</div>
-    </div></div>
-  </div>
+  <div class="beat"><div class="beat-num">3</div><div>
+    <div class="gloss">Deep Woods</div>
+    <div class="description">Neutral to upper space &middot; flat-B &middot; loose-wiggle</div>
+    <div class="notation">Bɑ√Bʌω</div>
+  </div></div>
 
+  <div class="beat"><div class="beat-num">4</div><div>
+    <div class="gloss">House</div>
+    <div class="description">Upper space &middot; bilateral B-hands &middot; repeated contact</div>
+    <div class="notation">BʌˡBʌ÷</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">5</div><div>
+    <div class="gloss">Read</div>
+    <div class="description">Overhead &middot; V-hand over flat palm &middot; downward brush</div>
+    <div class="notation">B⊤Vɒv•</div>
+  </div></div>
 </div>
 
-<footer>
-  <p>
-    Goldilocks passage sourced from an existing ASL Stokoe notation corpus document. &nbsp;·&nbsp;
-    Red Riding Hood and Cinderella generated from the Stokoe symbol table (Mandel 1993 ASCII encoding). &nbsp;·&nbsp;
-    Vocab ✓ signs are from our verified training vocabulary. ~ signs are phonologically accurate approximations, not corpus-verified. &nbsp;·&nbsp;
-    Font: StokoeTempo by Angus Grieve-Smith, Gallaudet University. &nbsp;·&nbsp;
-    Notation framework: Stokoe (1960), formalized Liddell &amp; Johnson (1989).
-  </p>
-</footer>
+<div class="story">
+  <div class="story-title">II. Little Red Riding Hood</div>
+
+  <div class="beat"><div class="beat-num">1</div><div>
+    <div class="gloss">Mother <span class="gloss-note">*</span></div>
+    <div class="description">Chin &middot; spread-5 handshape &middot; tap-contact</div>
+    <div class="notation">U5Dx</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">2</div><div>
+    <div class="gloss">Red <span class="gloss-note">*</span></div>
+    <div class="description">Lips &middot; index finger &middot; brush downward</div>
+    <div class="notation">U1v</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">3</div><div>
+    <div class="gloss">Wear Cloak</div>
+    <div class="description">Upper space &middot; bilateral flat-B &middot; contact across shoulders</div>
+    <div class="notation">Bʌ˥Bʌ×</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">4</div><div>
+    <div class="gloss">Forest</div>
+    <div class="description">Forehead-level &middot; spread-5, tree branches &middot; wrist-oscillate</div>
+    <div class="notation">P5z~</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">5</div><div>
+    <div class="gloss">Wolf</div>
+    <div class="description">Cheek &middot; spread-claw handshape &middot; contact at face</div>
+    <div class="notation">}5×</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">6</div><div>
+    <div class="gloss">Help <span class="gloss-note">*</span></div>
+    <div class="description">Neutral space &middot; fist on flat palm &middot; lifts upward</div>
+    <div class="notation">0A^B</div>
+  </div></div>
+</div>
+
+<div class="story">
+  <div class="story-title">III. Cinderella</div>
+
+  <div class="beat"><div class="beat-num">1</div><div>
+    <div class="gloss">Work, All Day</div>
+    <div class="description">Neutral space &middot; bilateral flat-B &middot; repeated contact</div>
+    <div class="notation">0BɑBɑ÷</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">2</div><div>
+    <div class="gloss">Dance</div>
+    <div class="description">Neutral space &middot; V-hand, two-finger leg classifier &middot; side-oscillate</div>
+    <div class="notation">0Vz~</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">3</div><div>
+    <div class="gloss">Glass, Clear</div>
+    <div class="description">Neutral space &middot; G-hand, index and thumb &middot; forward motion</div>
+    <div class="notation">0G></div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">4</div><div>
+    <div class="gloss">Slipper</div>
+    <div class="description">Neutral space &middot; bilateral fists &middot; tap together</div>
+    <div class="notation">0A×A×</div>
+  </div></div>
+
+  <div class="beat"><div class="beat-num">5</div><div>
+    <div class="gloss">Happy <span class="gloss-note">*</span></div>
+    <div class="description">Chest &middot; flat-B hands &middot; brush upward twice</div>
+    <div class="notation">[]B^B^</div>
+  </div></div>
+</div>
+
+<div class="works-cited">
+  <h2>Works Cited</h2>
+  <ol>
+    <li><span>Stokoe, W. C.</span> (1960). <em>Sign Language Structure: An Outline of the Visual Communication Systems of the American Deaf.</em> Studies in Linguistics, Occasional Papers 8. University of Buffalo.</li>
+    <li><span>Liddell, S. K., &amp; Johnson, R. E.</span> (1989). American Sign Language: The phonological base. <em>Sign Language Studies, 64,</em> 195&ndash;277.</li>
+    <li><span>Mandel, M.</span> (1993). ASCII-Stokoe notation system for machine-readable Stokoe transcription.</li>
+    <li><span>Grieve-Smith, A.</span> StokoeTempo typeface. Gallaudet University. Retrieved from panix.com/~grvsmth/stokoe/</li>
+    <li><span>Goldilocks passage.</span> Sourced from existing ASL Stokoe notation corpus document.</li>
+    <li><span>Red Riding Hood &amp; Cinderella passages.</span> Generated from Stokoe symbol table (Mandel 1993). Signs marked * verified against project training vocabulary. Unmarked signs are phonologically accurate approximations, not corpus-verified.</li>
+  </ol>
+</div>
 
 </body>
 </html>
