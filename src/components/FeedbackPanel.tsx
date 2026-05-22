@@ -30,7 +30,7 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
 
         {sessionState === "idle" && (
           <p className="text-sm text-slate-500">
-            Place both hands in the guide box and hold the record button while signing.
+            Place your signing hand inside the guide box and hold still — recording starts automatically.
           </p>
         )}
 
