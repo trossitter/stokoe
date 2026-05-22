@@ -11,6 +11,7 @@ import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
 import { SwipeTutorial } from "./components/SwipeTutorial";
 import { CameraHint } from "./components/CameraHint";
+import { ConfirmNext } from "./components/ConfirmNext";
 
 type SessionState = "idle" | "evaluating" | "result";
 
@@ -33,6 +34,8 @@ export default function App() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
+  const [pendingNext, setPendingNext] = useState(false);
+  const pendingNextRef = useRef(false);
 
   const item = VOCAB[order[vocabIndex % VOCAB.length]];
 
@@ -65,18 +68,31 @@ export default function App() {
   );
 
   const handleNext = useCallback(() => {
+    pendingNextRef.current = false;
+    setPendingNext(false);
     setVocabIndex((i) => i + 1);
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
   }, []);
 
+  // Two-stage swipe: first swipe → confirmation, second swipe → advance
+  const handleSwipeInResult = useCallback(() => {
+    if (!pendingNextRef.current) {
+      pendingNextRef.current = true;
+      setPendingNext(true);
+    } else {
+      handleNext();
+    }
+  }, [handleNext]);
+
   const handleRetry = useCallback(() => {
+    pendingNextRef.current = false;
+    setPendingNext(false);
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
   }, []);
 
-  // Rightward hand swipe during result → advance to next sign
-  useHandSwipe(videoRef, sessionState === "result", handleNext);
+  useHandSwipe(videoRef, sessionState === "result", handleSwipeInResult);
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
@@ -119,9 +135,13 @@ export default function App() {
             videoRef={videoRef}
             sessionState={showTutorial ? "evaluating" : displayState}
             onFramesReady={handleFramesReady}
-            overlay={displayState === "result" && passed !== null
-              ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-              : null}
+            overlay={
+              pendingNext
+                ? <ConfirmNext onConfirm={handleNext} />
+                : displayState === "result" && passed !== null
+                ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+                : null
+            }
           />
         </div>
         <FeedbackPanel
