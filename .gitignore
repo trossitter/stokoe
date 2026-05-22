@@ -1,3 +1,13 @@
+# Large data and model files
+data/frames/
+data/keypoints/
+data/*.zip
+data/*.log
+data/hand_landmarker.task
+public/hand_landmarker.task
+public/wasm/
+model/
+
 # Logs
 logs
 *.log
