@@ -22,20 +22,21 @@ const CARDS: Card[] = [
   },
 ];
 
-// Swipe detection — two independent triggers (OR'd)
-//
-// 1. Displacement: slow deliberate swipe
-const DISPLACE_THRESHOLD = 0.22;  // fraction of frame width over TRACK_WINDOW_MS
+// Pastel palette — one per card, deepening as you advance
+const PALETTES = [
+  { bg: "#F0EBFF", title: "#5C3D99", body: "#7A5AB8", dot: "#9B7DD4" }, // lavender
+  { bg: "#DCF5EC", title: "#1A6B4A", body: "#2E8A63", dot: "#3DAD7C" }, // mint
+  { bg: "#FFE9F0", title: "#A0365C", body: "#C25678", dot: "#D97094" }, // rose
+  { bg: "#FEF0DC", title: "#934D10", body: "#B56820", dot: "#D4883A" }, // amber
+] as const;
+
+// Detection — rightward only
+const DISPLACE_THRESHOLD = 0.22;
 const TRACK_WINDOW_MS = 650;
 const MIN_SAMPLES = 5;
-//
-// 2. Velocity (flick): fast movement over a short window
-//    velocity = Δx / Δt in normalised-units / ms
-//    threshold ≈ 1.2 frame-widths per second = 0.0012 /ms
-const FLICK_VELOCITY = 0.0012;    // normalised units per ms
-const FLICK_DISPLACE_FLOOR = 0.08; // minimum total Δx — noise guard
-const FLICK_LOOKBACK = 3;          // samples; ~270ms at 90ms cadence
-//
+const FLICK_VELOCITY = 0.0012;
+const FLICK_DISPLACE_FLOOR = 0.08;
+const FLICK_LOOKBACK = 3;
 const SAMPLE_MS = 90;
 
 type Props = {
@@ -45,8 +46,9 @@ type Props = {
 
 export function SwipeTutorial({ videoRef, onComplete }: Props) {
   const [index, setIndex] = useState(0);
-  const [flyDir, setFlyDir] = useState<"left" | "right" | null>(null);
-  const [handSide, setHandSide] = useState<"left" | "center" | "right" | null>(null);
+  const [flyDir, setFlyDir] = useState<"right" | null>(null);
+  const [handOnRight, setHandOnRight] = useState(false);
+  const [handDetected, setHandDetected] = useState(false);
 
   const indexRef = useRef(0);
   const flyingRef = useRef(false);
@@ -54,28 +56,24 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
   const lastSampleRef = useRef(0);
   const captureRef = useRef<HTMLCanvasElement | null>(null);
 
-  const doSwipe = useCallback((dir: "left" | "right") => {
+  const advance = useCallback(() => {
     if (flyingRef.current) return;
     flyingRef.current = true;
     samplesRef.current = [];
-    setFlyDir(dir);
+    setFlyDir("right");
     setTimeout(() => {
       setFlyDir(null);
       flyingRef.current = false;
-      if (dir === "right") {
-        if (indexRef.current >= CARDS.length - 1) {
-          onComplete();
-          return;
-        }
-        indexRef.current += 1;
-        setIndex(indexRef.current);
-      } else if (dir === "left" && indexRef.current > 0) {
-        indexRef.current -= 1;
-        setIndex(indexRef.current);
+      if (indexRef.current >= CARDS.length - 1) {
+        onComplete();
+        return;
       }
+      indexRef.current += 1;
+      setIndex(indexRef.current);
     }, 380);
   }, [onComplete]);
 
+  // Hand swipe detection loop
   useEffect(() => {
     let alive = true;
 
@@ -98,7 +96,6 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
           const c = captureRef.current;
           c.width = 256; c.height = 256;
           const ctx = c.getContext("2d")!;
-          // Mirror capture to match the mirrored display so x coords feel natural
           ctx.save();
           ctx.scale(-1, 1);
           ctx.drawImage(video, -256, 0, 256, 256);
@@ -106,8 +103,9 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
 
           const result = landmarker.detect(c);
           if (result.landmarks?.length) {
-            const wx = result.landmarks[0][0].x; // wrist, in display coords
-            setHandSide(wx < 0.4 ? "left" : wx > 0.6 ? "right" : "center");
+            const wx = result.landmarks[0][0].x;
+            setHandDetected(true);
+            setHandOnRight(wx > 0.55);
 
             if (!flyingRef.current) {
               samplesRef.current.push({ x: wx, ts: now });
@@ -116,37 +114,34 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
 
               const s = samplesRef.current;
 
-              // ── Displacement trigger ────────────────────────────────────
+              // Displacement trigger
               if (s.length >= MIN_SAMPLES) {
                 const delta = s[s.length - 1].x - s[0].x;
-                if (delta > DISPLACE_THRESHOLD) { doSwipe("right"); }
-                else if (delta < -DISPLACE_THRESHOLD) { doSwipe("left"); }
+                if (delta > DISPLACE_THRESHOLD) { advance(); }
               }
 
-              // ── Velocity / flick trigger ────────────────────────────────
+              // Velocity / flick trigger (rightward only)
               if (!flyingRef.current && s.length >= FLICK_LOOKBACK) {
                 const tail = s.slice(-FLICK_LOOKBACK);
                 const dt = tail[tail.length - 1].ts - tail[0].ts;
                 if (dt > 0) {
                   const dx = tail[tail.length - 1].x - tail[0].x;
-                  const velocity = dx / dt; // normalised units/ms
-                  // All samples must move in the same direction (monotonic) —
-                  // filters out jitter that happens to be fast
+                  const velocity = dx / dt;
                   const monotonic = tail.every(
-                    (_, i) => i === 0 || (tail[i].x - tail[i - 1].x) * dx >= 0,
+                    (_, i) => i === 0 || tail[i].x >= tail[i - 1].x,
                   );
                   if (
+                    dx > 0 &&
                     monotonic &&
-                    Math.abs(dx) >= FLICK_DISPLACE_FLOOR &&
-                    Math.abs(velocity) >= FLICK_VELOCITY
-                  ) {
-                    doSwipe(dx > 0 ? "right" : "left");
-                  }
+                    dx >= FLICK_DISPLACE_FLOOR &&
+                    velocity >= FLICK_VELOCITY
+                  ) { advance(); }
                 }
               }
             }
           } else {
-            setHandSide(null);
+            setHandDetected(false);
+            setHandOnRight(false);
             samplesRef.current = [];
           }
         } catch {
@@ -159,86 +154,80 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
 
     requestAnimationFrame(tick);
     return () => { alive = false; };
-  }, [videoRef, doSwipe]);
+  }, [videoRef, advance]);
 
-  const card = CARDS[index];
+  const palette = PALETTES[index];
   const isLast = index === CARDS.length - 1;
-  const cardStyle: React.CSSProperties = {
-    transform: flyDir === "right"
-      ? "translateX(130%) rotate(18deg)"
-      : flyDir === "left"
-      ? "translateX(-130%) rotate(-18deg)"
-      : "translateX(0) rotate(0)",
-    transition: flyDir
-      ? "transform 0.38s ease-in"
-      : "transform 0.22s ease-out",
-  };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    // Ignore clicks on the arrow buttons themselves (they stopPropagation)
-    const mid = (e.currentTarget as HTMLElement).offsetWidth / 2;
-    if (e.clientX >= mid) {
-      doSwipe("right");
-    } else if (index > 0) {
-      doSwipe("left");
-    }
-  };
+  const cardFlyStyle: React.CSSProperties = flyDir === "right"
+    ? { transform: "translateX(130%) rotate(18deg)", transition: "transform 0.38s ease-in, opacity 0.3s ease-in", opacity: 0 }
+    : {};
 
   return (
-    <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center select-none cursor-pointer"
-      style={{ background: "rgba(2, 6, 23, 0.88)", backdropFilter: "blur(24px) brightness(0.6)" }}
-      onClick={handleOverlayClick}
-    >
-      {/* Progress dots */}
-      <div className="flex gap-2 mb-10">
-        {CARDS.map((_, i) => (
-          <div
-            key={i}
-            className={`rounded-full transition-all duration-300 ${
-              i === index ? "w-5 h-2 bg-white" :
-              i < index ? "w-2 h-2 bg-slate-500" : "w-2 h-2 bg-slate-700"
-            }`}
-          />
-        ))}
-      </div>
+    <>
+      {/* Card-in keyframe — injected once */}
+      <style>{`
+        @keyframes cardIn {
+          from { opacity: 0; transform: translateX(28px) rotate(3deg); }
+          to   { opacity: 1; transform: translateX(0)    rotate(0deg); }
+        }
+      `}</style>
 
-      {/* Left / right zone arrows — clickable, stop propagation so overlay split still works */}
-      <div className="absolute inset-0 flex items-center justify-between px-5">
+      <div
+        className="absolute inset-0 z-20 flex flex-col items-center justify-center select-none cursor-pointer"
+        style={{ background: "rgba(2, 6, 23, 0.88)", backdropFilter: "blur(24px) brightness(0.6)" }}
+        onClick={advance}
+      >
+        {/* Progress dots — current dot takes the card's palette colour */}
+        <div className="flex gap-2 mb-10">
+          {CARDS.map((_, i) => (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-400"
+              style={{
+                width: i === index ? "20px" : "8px",
+                height: "8px",
+                background: i === index ? palette.dot : i < index ? "#475569" : "#1e293b",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Card — remounts on each index so cardIn animation fires fresh */}
         <div
-          className={`text-4xl transition-all duration-150 cursor-pointer ${
-            index > 0 && handSide === "left"
-              ? "text-white opacity-100 scale-125"
-              : index > 0
-              ? "text-slate-600 opacity-70 scale-100 hover:text-slate-400"
-              : "text-slate-800 opacity-30 scale-100"
-          }`}
-          onClick={(e) => { e.stopPropagation(); if (index > 0) doSwipe("left"); }}
-        >←</div>
-        <div
-          className={`text-4xl transition-all duration-150 cursor-pointer ${
-            handSide === "right"
-              ? "text-white opacity-100 scale-125"
-              : "text-slate-600 opacity-70 scale-100 hover:text-slate-400"
-          }`}
-          onClick={(e) => { e.stopPropagation(); doSwipe("right"); }}
-        >→</div>
-      </div>
+          key={index}
+          className="w-72 rounded-3xl shadow-2xl px-8 py-10"
+          style={{
+            background: palette.bg,
+            ...cardFlyStyle,
+            ...(flyDir ? {} : { animation: "cardIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1)" }),
+          }}
+        >
+          <h2 className="text-xl font-bold mb-4" style={{ color: palette.title }}>
+            {CARDS[index].title}
+          </h2>
+          <p className="text-sm leading-relaxed" style={{ color: palette.body }}>
+            {CARDS[index].body}
+          </p>
+        </div>
 
-      {/* Card */}
-      <div className="w-72 bg-white rounded-3xl shadow-2xl px-8 py-10" style={cardStyle}>
-        <h2 className="text-xl font-bold text-slate-900 mb-4">{card.title}</h2>
-        <p className="text-slate-600 text-sm leading-relaxed">{card.body}</p>
+        {/* Rightward arc cue — glows when hand is on right side */}
+        <div className="mt-8 flex items-center gap-2">
+          <span
+            className="text-2xl transition-all duration-200"
+            style={{
+              opacity: handOnRight ? 1 : 0.25,
+              transform: handOnRight ? "scale(1.2)" : "scale(1)",
+              color: handOnRight ? palette.dot : "#e2e8f0",
+            }}
+          >→</span>
+          <p className="text-xs" style={{ color: handDetected ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)" }}>
+            {handDetected
+              ? isLast ? "swipe right or tap to begin" : "swipe right or tap to continue"
+              : "tap — or show your hand and swipe right"}
+          </p>
+        </div>
       </div>
-
-      {/* Status */}
-      <p className="mt-8 text-xs transition-colors duration-200 text-center px-4" style={{
-        color: handSide !== null ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
-      }}>
-        {handSide !== null
-          ? isLast ? "swipe or click right to start →" : "swipe or click right to continue →"
-          : "click right — or show your hand and swipe"}
-      </p>
-    </div>
+    </>
   );
 }
