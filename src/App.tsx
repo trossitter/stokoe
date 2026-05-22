@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { VOCAB } from "./data/vocab";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
@@ -13,6 +13,7 @@ import { SwipeTutorial } from "./components/SwipeTutorial";
 type SessionState = "idle" | "evaluating" | "result";
 
 export default function App() {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
@@ -100,6 +101,7 @@ export default function App() {
             vocabTotal={VOCAB.length}
           />
           <WebcamView
+            videoRef={videoRef}
             sessionState={showTutorial ? "evaluating" : displayState}
             onFramesReady={handleFramesReady}
           />
@@ -114,7 +116,7 @@ export default function App() {
         />
       </main>
 
-      {showTutorial && <SwipeTutorial onComplete={handleTutorialComplete} />}
+      {showTutorial && <SwipeTutorial videoRef={videoRef} onComplete={handleTutorialComplete} />}
     </div>
   );
 }

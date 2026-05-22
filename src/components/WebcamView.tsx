@@ -5,12 +5,12 @@ import { usePresenceTrigger } from "../hooks/usePresenceTrigger";
 const ROI = { x: 0.12, y: 0.05, w: 0.76, h: 0.9 };
 
 type Props = {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   sessionState: "idle" | "recording" | "evaluating" | "result";
   onFramesReady: (frames: ImageData[]) => void;
 };
 
-export function WebcamView({ sessionState, onFramesReady }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export function WebcamView({ videoRef, sessionState, onFramesReady }: Props) {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
