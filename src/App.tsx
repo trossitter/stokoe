@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
 import { VOCAB } from "./data/vocab";
 import { classifyAttempt } from "./model/signClassifier";
@@ -14,9 +14,11 @@ import { WelcomeSplash } from "./components/WelcomeSplash";
 import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
 import { MoteField } from "./components/onboarding/MoteField";
+import { ScoringOverlay } from "./components/ScoringOverlay";
 
 type SessionState = "idle" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
+const SCORING_MIN_MS = 2400;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -61,14 +63,50 @@ export default function App() {
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
   const [videoHidden, setVideoHidden] = useState(false);
   const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
+  const [scoringVisible, setScoringVisible] = useState(false);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => new URLSearchParams(location.search).has("onboarding")
   );
 
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
+  const scoringShownAtRef = useRef<number | null>(null);
+  const scoringHideTimerRef = useRef<number | null>(null);
 
   const item = VOCAB[order[vocabIndex % VOCAB.length]];
+
+  const showScoringOverlay = useCallback(() => {
+    if (scoringHideTimerRef.current !== null) {
+      window.clearTimeout(scoringHideTimerRef.current);
+      scoringHideTimerRef.current = null;
+    }
+    scoringShownAtRef.current = performance.now();
+    setScoringVisible(true);
+  }, []);
+
+  const hideScoringOverlayAfterMinimum = useCallback(() => {
+    const shownAt = scoringShownAtRef.current ?? performance.now();
+    const elapsed = performance.now() - shownAt;
+    const remaining = Math.max(0, SCORING_MIN_MS - elapsed);
+
+    if (scoringHideTimerRef.current !== null) {
+      window.clearTimeout(scoringHideTimerRef.current);
+    }
+
+    scoringHideTimerRef.current = window.setTimeout(() => {
+      setScoringVisible(false);
+      scoringShownAtRef.current = null;
+      scoringHideTimerRef.current = null;
+    }, remaining);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (scoringHideTimerRef.current !== null) {
+        window.clearTimeout(scoringHideTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleLogin = (name: string, powerUser: boolean) => {
     const saved = saveProfile(name, powerUser);
@@ -96,7 +134,12 @@ export default function App() {
 
   const handleFramesReady = useCallback(
     async (frames: ImageData[]) => {
-      if (frames.length === 0) { setSessionState("idle"); return; }
+      if (frames.length === 0) {
+        setSessionState("idle");
+        hideScoringOverlayAfterMinimum();
+        return;
+      }
+      showScoringOverlay();
       setSessionState("evaluating");
       try {
         const result = await classifyAttempt(frames, item.id);
@@ -106,11 +149,13 @@ export default function App() {
         setHintKey(result.hintKey);
         setProgress(updated);
         setSessionState("result");
+        hideScoringOverlayAfterMinimum();
       } catch {
         setSessionState("idle");
+        hideScoringOverlayAfterMinimum();
       }
     },
-    [item.id],
+    [hideScoringOverlayAfterMinimum, item.id, showScoringOverlay],
   );
 
   const handleRecordingReady = useCallback((url: string) => {
@@ -194,7 +239,7 @@ export default function App() {
 
       <div className="relative z-10 h-screen flex flex-col overflow-hidden">
         <header
-          className="px-5 py-3 border-b flex items-center justify-between shrink-0"
+          className="relative z-[60] px-5 py-3 border-b flex items-center justify-between shrink-0"
           style={{
             background: "rgba(20, 22, 35, 0.85)",
             backdropFilter: "blur(12px)",
@@ -270,6 +315,7 @@ export default function App() {
             />
           </div>
         </main>
+        {scoringVisible && <ScoringOverlay visible={scoringVisible} />}
       </div>
 
       {showTutorial && <Onboarding onComplete={handleTutorialComplete} />}
