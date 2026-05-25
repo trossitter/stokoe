@@ -42,17 +42,21 @@ export function SignPrompt({
             )}
           </div>
           <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{item.word}</h2>
-          {/* Notation hidden from learner — present for hint system and pilot documentation */}
           {NOTATION[item.id] && (
-            <p
-              aria-hidden="true"
-              className="text-2xl mt-1 tracking-widest select-none"
-              style={{ fontFamily: "StokoeTempo, monospace", color: "transparent" }}
+            <div
+              className="inline-flex items-center mt-2 rounded-lg px-3 py-1.5"
+              style={{ background: "#1e293b" }}
+              title={NOTATION[item.id].readable}
               data-notation={NOTATION[item.id].ascii}
               data-readable={NOTATION[item.id].readable}
             >
-              {NOTATION[item.id].ascii}
-            </p>
+              <p
+                className="text-xl tracking-widest select-none"
+                style={{ fontFamily: "StokoeTempo, monospace", color: "#cbd5e1" }}
+              >
+                {NOTATION[item.id].ascii}
+              </p>
+            </div>
           )}
           {record && record.attempts > 0 && (
             <p className="text-xs text-slate-400 mt-1">
@@ -95,7 +99,7 @@ export function SignPrompt({
                 Next sign →
               </button>
             </div>
-            <p className="text-center text-xs text-slate-400">or swipe your hand right →</p>
+            <p className="text-center text-xs text-slate-400">← swipe your hand to navigate →</p>
           </div>
         )}
       </div>
