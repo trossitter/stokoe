@@ -28,9 +28,13 @@ export function SwipeTrack({ onCommit, active = true, label = "Swipe to begin", 
       setRangeState(v);
     }
     updateRange();
+    // Re-measure when this panel becomes active (it may have been off-screen before)
+    if (active) {
+      requestAnimationFrame(updateRange);
+    }
     window.addEventListener("resize", updateRange);
     return () => window.removeEventListener("resize", updateRange);
-  }, []);
+  }, [active]);
 
   const onDown = useCallback((e: React.PointerEvent) => {
     if (armed) return;
@@ -47,10 +51,20 @@ export function SwipeTrack({ onCommit, active = true, label = "Swipe to begin", 
     setX(Math.min(1, Math.max(0, (startRef.current + dx) / rangeRef.current)));
   }, []);
 
+  const onTrackClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (armed) return;
+    // If the knob itself was clicked, let the knob handlers deal with it
+    if ((e.target as Element).closest(".ob-st-knob")) return;
+    // Tap anywhere on the track — animate knob to full and commit
+    setX(1);
+    setArmed(true);
+    setTimeout(() => onCommit(), 380);
+  }, [armed, onCommit]);
+
   const onUp = useCallback(() => {
     if (!draggingRef.current) return;
     draggingRef.current = false;
-    if (x > 0.88) {
+    if (x > 0.80) {
       setX(1);
       setArmed(true);
       setTimeout(() => onCommit(), 380);
@@ -78,6 +92,7 @@ export function SwipeTrack({ onCommit, active = true, label = "Swipe to begin", 
       ref={trackRef}
       className={`ob-swipe-track${armed ? " armed" : ""}`}
       data-no-drag
+      onClick={onTrackClick}
     >
       <div className="ob-st-fill" style={{ width: `${x * 100}%` }} />
       <div className="ob-st-label" style={{ opacity: armed ? 0 : 1 - x * 0.85 }}>
