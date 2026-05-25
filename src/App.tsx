@@ -11,7 +11,6 @@ import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
 import { SwipeTutorial } from "./components/SwipeTutorial";
 import { CameraHint } from "./components/CameraHint";
-import { ConfirmNext } from "./components/ConfirmNext";
 
 type SessionState = "idle" | "evaluating" | "result";
 
@@ -24,6 +23,26 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// Brief directional flash shown when a hand swipe registers — confirms the gesture fired
+function SwipeFlash({ direction }: { direction: "left" | "right" }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+         style={{ zIndex: 10 }}>
+      <div style={{
+        background: "rgba(255,255,255,0.18)",
+        border: "2px solid rgba(255,255,255,0.5)",
+        borderRadius: "50%",
+        width: 88, height: 88,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 40, color: "#fff",
+        animation: "swipe-flash 0.32s ease-out forwards",
+      }}>
+        {direction === "right" ? "→" : "←"}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
@@ -34,8 +53,10 @@ export default function App() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
-  const [pendingNext, setPendingNext] = useState(false);
-  const pendingNextRef = useRef(false);
+  const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
+
+  // Pointer-drag tracking for desktop mouse swipe fallback
+  const pointerStartX = useRef<number | null>(null);
 
   const item = VOCAB[order[vocabIndex % VOCAB.length]];
 
@@ -68,34 +89,46 @@ export default function App() {
   );
 
   const handleNext = useCallback(() => {
-    pendingNextRef.current = false;
-    setPendingNext(false);
     setVocabIndex((i) => i + 1);
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
   }, []);
 
-  // Two-stage swipe: first swipe → confirmation, second swipe → advance
-  const handleSwipeInResult = useCallback(() => {
-    if (!pendingNextRef.current) {
-      pendingNextRef.current = true;
-      setPendingNext(true);
-    } else {
-      handleNext();
-    }
-  }, [handleNext]);
-
-  const handleRetry = useCallback(() => {
-    pendingNextRef.current = false;
-    setPendingNext(false);
+  const handlePrev = useCallback(() => {
+    setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
   }, []);
 
-  // First swipe → show confirmation
-  useHandSwipe(videoRef, sessionState === "result" && !pendingNext, handleSwipeInResult);
-  // On confirmation: slow deliberate arc only — no flick, no position-hold, higher bar
-  useHandSwipe(videoRef, pendingNext, handleNext, { displaceThreshold: 0.38, noFlick: true });
+  const handleRetry = useCallback(() => {
+    setPassed(null); setConfidence(null); setHintKey(null);
+    setSessionState("idle");
+  }, []);
+
+  // Show a brief directional flash, then execute the navigation.
+  // Gives the learner clear confirmation their swipe registered before the UI changes.
+  const flashThen = useCallback((dir: "left" | "right", action: () => void) => {
+    setSwipeFlash(dir);
+    setTimeout(() => { setSwipeFlash(null); action(); }, 300);
+  }, []);
+
+  const handleSwipeNext = useCallback(() => flashThen("right", handleNext), [flashThen, handleNext]);
+  const handleSwipePrev = useCallback(() => flashThen("left", handlePrev), [flashThen, handlePrev]);
+
+  // Single swipe: right = next sign, left = previous sign
+  useHandSwipe(videoRef, sessionState === "result", handleSwipeNext, handleSwipePrev);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (sessionState !== "result") return;
+    pointerStartX.current = e.clientX;
+  };
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (pointerStartX.current === null) return;
+    const delta = e.clientX - pointerStartX.current;
+    pointerStartX.current = null;
+    if (delta > 60) handleSwipeNext();
+    else if (delta < -60) handleSwipePrev();
+  };
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
@@ -106,7 +139,11 @@ export default function App() {
     sessionState === "evaluating" ? "evaluating" : "result";
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden relative">
+    <div
+      className="h-screen flex flex-col bg-slate-50 overflow-hidden relative select-none"
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
       <header className="px-5 py-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <img src="/logo.webp" alt="Stokoe" className="h-7 w-7 rounded" />
@@ -139,8 +176,8 @@ export default function App() {
             sessionState={showTutorial ? "evaluating" : displayState}
             onFramesReady={handleFramesReady}
             overlay={
-              pendingNext
-                ? <ConfirmNext onConfirm={handleNext} />
+              swipeFlash
+                ? <SwipeFlash direction={swipeFlash} />
                 : displayState === "result" && passed !== null
                 ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
                 : null
