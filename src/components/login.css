@@ -1,0 +1,192 @@
+/* Stokoe LoginScreen — Drift palette */
+
+.ls-root {
+  --bg:         oklch(0.22 0.028 260);
+  --bg-2:       oklch(0.26 0.030 260);
+  --fg:         oklch(0.97 0.008 85);
+  --fg-mute:    oklch(0.78 0.014 85);
+  --fg-faint:   oklch(0.58 0.022 260);
+  --rule:       oklch(0.36 0.028 260);
+  --accent:     oklch(0.94 0.042 85);
+  --accent-ink: oklch(0.18 0.024 260);
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fade-out when transitioning to onboarding */
+.ls-root.ls-exit {
+  animation: ls-fade-out 0.45s ease-in forwards;
+}
+
+@keyframes ls-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.ls-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ls-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ls-logo {
+  height: 44px;
+  width: 44px;
+  border-radius: 10px;
+}
+
+.ls-brand-text h1 {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  line-height: 1;
+}
+
+.ls-brand-text p {
+  margin: 4px 0 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+.ls-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ls-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
+
+.ls-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  color: var(--fg);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 300;
+  padding: 13px 16px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ls-input::placeholder {
+  color: var(--fg-faint);
+}
+
+.ls-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px oklch(0.94 0.042 85 / 0.15);
+}
+
+.ls-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ls-btn {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.ls-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ls-btn-label {
+  display: block;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.ls-btn-sub {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Power user button — secondary/ghost */
+.ls-btn-power {
+  background: transparent;
+  color: var(--fg-mute);
+}
+
+.ls-btn-power .ls-btn-sub {
+  color: var(--fg-faint);
+}
+
+.ls-btn-power:not(:disabled):hover {
+  background: var(--bg-2);
+  border-color: oklch(0.50 0.028 260);
+}
+
+/* New user button — accent */
+.ls-btn-new {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ls-btn-new .ls-btn-label {
+  color: var(--accent-ink);
+}
+
+.ls-btn-new .ls-btn-sub {
+  color: oklch(0.30 0.024 260);
+}
+
+.ls-btn-new:not(:disabled):hover {
+  background: oklch(0.97 0.048 85);
+  border-color: oklch(0.97 0.048 85);
+}
+
+.ls-footer {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  text-align: center;
+  opacity: 0.7;
+}
