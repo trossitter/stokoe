@@ -22,14 +22,21 @@ const HINT_LABEL: Record<HintKey, string> = {
 
 export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence, progress }: Props) {
   return (
-    <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col min-h-0 gap-4">
+    <section
+      className="rounded-2xl shadow-sm border p-4 flex flex-col min-h-0 gap-4"
+      style={{
+        background: "oklch(0.26 0.030 260 / 0.75)",
+        backdropFilter: "blur(8px)",
+        borderColor: "oklch(0.36 0.028 260 / 0.6)",
+      }}
+    >
 
       {/* Live feedback */}
       <div className="flex-1 flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-slate-700">Feedback</h2>
+        <h2 className="text-sm font-medium text-slate-200">Feedback</h2>
 
         {sessionState === "idle" && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-400">
             Place your signing hand inside the guide box and hold still — recording starts automatically.
           </p>
         )}
@@ -39,18 +46,18 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
         )}
 
         {sessionState === "evaluating" && (
-          <p className="text-sm text-slate-500">Checking your attempt…</p>
+          <p className="text-sm text-slate-400">Checking your attempt…</p>
         )}
 
         {sessionState === "result" && item && passed !== null && (
           <div className="flex flex-col gap-3">
             {/* Pass / fail */}
-            <div className={`rounded-xl px-4 py-3 ${passed ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
-              <p className={`font-semibold text-sm ${passed ? "text-emerald-700" : "text-red-600"}`}>
+            <div className={`rounded-xl px-4 py-3 border ${passed ? "bg-emerald-900/40 border-emerald-700" : "bg-red-900/40 border-red-700"}`}>
+              <p className={`font-semibold text-sm ${passed ? "text-emerald-300" : "text-red-300"}`}>
                 {passed ? "Correct!" : "Not quite"}
               </p>
               {confidence !== null && (
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Confidence: {Math.round(confidence * 100)}%
                 </p>
               )}
@@ -58,11 +65,11 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
 
             {/* Hint */}
             {!passed && hintKey && (
-              <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+              <div className="rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
                   {HINT_LABEL[hintKey]}
                 </p>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-slate-200">
                   {item.hints[hintKey]}
                 </p>
               </div>
@@ -70,12 +77,12 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
 
             {/* Reference parameters on pass */}
             {passed && (
-              <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Sign parameters</p>
+              <div className="rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Sign parameters</p>
                 {(["handshape", "movement", "location", "orientation"] as const).map((k) => (
                   <div key={k} className="mb-1.5">
-                    <span className="text-xs font-medium text-slate-500 capitalize">{k}: </span>
-                    <span className="text-xs text-slate-600">{item.params[k]}</span>
+                    <span className="text-xs font-medium text-slate-400 capitalize">{k}: </span>
+                    <span className="text-xs text-slate-300">{item.params[k]}</span>
                   </div>
                 ))}
               </div>
@@ -85,8 +92,8 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
       </div>
 
       {/* Progress summary */}
-      <div className="border-t border-slate-100 pt-3">
-        <p className="text-xs font-medium text-slate-500 mb-2">Session progress</p>
+      <div className="border-t border-slate-700 pt-3">
+        <p className="text-xs font-medium text-slate-400 mb-2">Session progress</p>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(progress).slice(-20).map(([id, rec]) => {
             const level = masteryLevel(rec);
@@ -97,13 +104,13 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
                 className={`w-3 h-3 rounded-sm ${
                   level === "mastered" ? "bg-emerald-400" :
                   level === "learning" ? "bg-amber-300" :
-                  "bg-slate-200"
+                  "bg-slate-700"
                 }`}
               />
             );
           })}
         </div>
-        <p className="text-xs text-slate-400 mt-1.5">
+        <p className="text-xs text-slate-500 mt-1.5">
           {Object.values(progress).filter(r => masteryLevel(r) === "mastered").length} mastered
           · {Object.values(progress).filter(r => masteryLevel(r) === "learning").length} in progress
         </p>

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
 import { VOCAB } from "./data/vocab";
+import { SIGN_VIDEOS } from "./data/videos";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
 import { getProfile, saveProfile, markTutorialDone, getProgress, recordAttempt } from "./store/progress";
@@ -13,6 +14,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { WelcomeSplash } from "./components/WelcomeSplash";
 import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
+import { MoteField } from "./components/onboarding/MoteField";
 
 type SessionState = "idle" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
@@ -50,7 +52,10 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
   const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? "app" : "login");
-  const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
+  // Only queue signs that have a reference video — prevents the "no video" placeholder
+  // showing on every other card. Expand back to full VOCAB once all videos are sourced.
+  const ACTIVE_VOCAB = VOCAB.filter(v => SIGN_VIDEOS[v.id]);
+  const [order] = useState<number[]>(() => shuffle(ACTIVE_VOCAB.map((_, i) => i)));
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [passed, setPassed] = useState<boolean | null>(null);
@@ -66,7 +71,7 @@ export default function App() {
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
 
-  const item = VOCAB[order[vocabIndex % VOCAB.length]];
+  const item = ACTIVE_VOCAB[order[vocabIndex % ACTIVE_VOCAB.length]];
 
   const handleLogin = (name: string, powerUser: boolean) => {
     const saved = saveProfile(name, powerUser);
@@ -174,71 +179,86 @@ export default function App() {
 
   return (
     <div
-      className="h-screen flex flex-col bg-slate-50 overflow-hidden relative select-none"
+      className="h-screen overflow-hidden relative select-none"
+      style={{ background: "oklch(0.22 0.028 260)" }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      <header className="px-5 py-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <img src="/logo.webp" alt="Stokoe" className="h-7 w-7 rounded" />
-          <h1 className="text-base font-bold text-slate-900 tracking-tight">Stokoe</h1>
-          <span className="text-xs text-slate-400">ASL 1 practice</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setVideoHidden((h) => !h)}
-            className="text-xs text-slate-400 hover:text-slate-600 transition-colors px-2 py-1 rounded-md hover:bg-slate-100"
-          >
-            {videoHidden ? "Show ref" : "Hide ref"}
-          </button>
-          <span className="text-xs text-slate-300">·</span>
-          <span className="text-xs text-slate-500">{profile.name}</span>
-          <span className="text-xs text-slate-300">·</span>
-          <span className="text-xs text-slate-400">
-            {Object.values(progress).reduce((s, r) => s + r.attempts, 0)} attempts
-          </span>
-        </div>
-      </header>
+      <div className="app-mote-bg">
+        <MoteField />
+      </div>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 p-3 min-h-0 overflow-hidden">
-        <div className="flex flex-col gap-3 min-h-0">
-          <SignPrompt
-            item={item}
-            record={progress[item.id]}
-            sessionState={displayState}
-            onNext={handleNext}
-            onRetry={handleRetry}
-            passed={passed}
-            vocabIndex={vocabIndex % VOCAB.length}
-            vocabTotal={VOCAB.length}
-          />
-          <WebcamView
-            videoRef={videoRef}
-            sessionState={showTutorial ? "idle" : displayState}
-            onFramesReady={handleFramesReady}
-            overlay={
-              swipeFlash
-                ? <SwipeFlash direction={swipeFlash} />
-                : displayState === "result" && passed !== null
-                ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-                : null
-            }
-          />
-        </div>
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
-          {!videoHidden && (
-            <SignVideo item={item} hidden={false} />
-          )}
-          <FeedbackPanel
-            item={item}
-            sessionState={displayState}
-            passed={passed}
-            hintKey={hintKey}
-            confidence={confidence}
-            progress={progress}
-          />
-        </div>
-      </main>
+      <div className="relative z-10 h-screen flex flex-col overflow-hidden">
+        <header
+          className="px-5 py-3 border-b flex items-center justify-between shrink-0"
+          style={{
+            background: "rgba(20, 22, 35, 0.85)",
+            backdropFilter: "blur(12px)",
+            borderColor: "oklch(0.36 0.028 260 / 0.5)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <img src="/logo.webp" alt="Stokoe" className="h-7 w-7 rounded" />
+            <h1 className="text-base font-bold text-slate-100 tracking-tight">Stokoe</h1>
+            <span className="text-xs text-slate-400">ASL 1 practice</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setVideoHidden((h) => !h)}
+              className="text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 rounded-md hover:bg-slate-800/70"
+            >
+              {videoHidden ? "Show ref" : "Hide ref"}
+            </button>
+            <span className="text-xs text-slate-500">·</span>
+            <span className="text-xs text-slate-400">{profile.name}</span>
+            <span className="text-xs text-slate-500">·</span>
+            <span className="text-xs text-slate-400">
+              {Object.values(progress).reduce((s, r) => s + r.attempts, 0)} attempts
+            </span>
+          </div>
+        </header>
+
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 p-3 min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-3 min-h-0">
+            <SignPrompt
+              item={item}
+              record={progress[item.id]}
+              sessionState={displayState}
+              onNext={handleNext}
+              onRetry={handleRetry}
+              passed={passed}
+              vocabIndex={vocabIndex % ACTIVE_VOCAB.length}
+              vocabTotal={ACTIVE_VOCAB.length}
+            />
+            {/* Webcam + reference video side by side so learner can compare in real time */}
+            <div className={`flex-1 grid gap-3 min-h-0 ${!videoHidden ? "grid-cols-2" : "grid-cols-1"}`}>
+              <WebcamView
+                videoRef={videoRef}
+                sessionState={showTutorial ? "idle" : displayState}
+                onFramesReady={handleFramesReady}
+                overlay={
+                  swipeFlash
+                    ? <SwipeFlash direction={swipeFlash} />
+                    : displayState === "result" && passed !== null
+                    ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+                    : null
+                }
+              />
+              {!videoHidden && <SignVideo item={item} hidden={false} />}
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
+            <FeedbackPanel
+              item={item}
+              sessionState={displayState}
+              passed={passed}
+              hintKey={hintKey}
+              confidence={confidence}
+              progress={progress}
+            />
+          </div>
+        </main>
+      </div>
 
       {showTutorial && <Onboarding onComplete={handleTutorialComplete} />}
     </div>
