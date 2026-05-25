@@ -58,8 +58,8 @@ export function Carousel({ index, setIndex, count, locked = false, exiting = fal
     if (!drag) return;
     const w = stageRef.current?.offsetWidth ?? 1;
     const ratio = drag.dx / w;
-    if (ratio < -0.18) setIndex((i) => Math.min(i + 1, count - 1));
-    else if (ratio > 0.18) setIndex((i) => Math.max(i - 1, 0));
+    if (ratio < -0.13) setIndex((i) => Math.min(i + 1, count - 1));
+    else if (ratio > 0.13) setIndex((i) => Math.max(i - 1, 0));
     setDrag(null);
   }, [drag, count, setIndex]);
 
@@ -83,7 +83,7 @@ export function Carousel({ index, setIndex, count, locked = false, exiting = fal
         className="ob-track"
         style={{
           transform: `translate3d(${tx}%,0,0)`,
-          transition: drag ? "none" : "transform 760ms cubic-bezier(.2,.7,.2,1)",
+          transition: drag ? "none" : "transform 400ms cubic-bezier(.25,.6,.2,1)",
         }}
       >
         {children}
