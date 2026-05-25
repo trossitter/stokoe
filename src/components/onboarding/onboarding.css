@@ -1,0 +1,665 @@
+/* Stokoe onboarding — Drift palette + component CSS */
+/* Scoped to .ob-root / .ob-stage to avoid leaking into the practice loop */
+
+/* display:contents wrapper — defines palette vars for all children to inherit */
+.ob-root {
+  --bg:         oklch(0.22 0.028 260);
+  --bg-2:       oklch(0.26 0.030 260);
+  --fg:         oklch(0.97 0.008 85);
+  --fg-mute:    oklch(0.78 0.014 85);
+  --fg-faint:   oklch(0.58 0.022 260);
+  --rule:       oklch(0.36 0.028 260);
+  --accent:     oklch(0.94 0.042 85);
+  --accent-ink: oklch(0.18 0.024 260);
+  --bloom:      oklch(0.80 0.09 85);
+  display: contents;
+}
+
+.ob-stage {
+  --bg:         oklch(0.22 0.028 260);
+  --bg-2:       oklch(0.26 0.030 260);
+  --fg:         oklch(0.97 0.008 85);
+  --fg-mute:    oklch(0.78 0.014 85);
+  --fg-faint:   oklch(0.58 0.022 260);
+  --rule:       oklch(0.36 0.028 260);
+  --accent:     oklch(0.94 0.042 85);
+  --accent-ink: oklch(0.18 0.024 260);
+  --bloom:      oklch(0.80 0.09 85);
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  cursor: grab;
+  z-index: 100;
+}
+.ob-stage.dragging { cursor: grabbing; }
+.ob-stage.exiting {
+  opacity: 0;
+  transition: opacity 700ms ease 100ms;
+}
+.ob-stage.exiting .ob-track {
+  transform: scale(1.06) translateY(-6%) !important;
+  filter: blur(8px);
+  transition: transform 900ms cubic-bezier(.6,0,.4,1), filter 900ms;
+}
+
+/* Carousel track */
+.ob-track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+.ob-stage.dragging .ob-track { transition: none !important; }
+
+/* Panel */
+.ob-panel {
+  flex: 0 0 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.ob-pad {
+  padding: 120px 96px 96px;
+}
+
+/* Mote field canvas */
+.ob-mote-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.ob-panel > *:not(.ob-mote-field):not(.ob-field) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Notation decoration field */
+.ob-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.42;
+}
+.ob-sym {
+  position: absolute;
+  border: 1px solid var(--fg-faint);
+}
+.ob-sym.circle { border-radius: 50%; }
+.ob-sym.half {
+  border-radius: 50%;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.ob-sym.dot {
+  background: var(--fg-faint);
+  border: 0;
+  border-radius: 50%;
+}
+
+/* Top chrome */
+.ob-chrome {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  z-index: 110;
+  pointer-events: none;
+}
+.ob-chrome > * { pointer-events: auto; }
+
+.ob-crest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-mute);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ob-crest-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  flex-shrink: 0;
+}
+
+.ob-steps {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+.ob-pip {
+  width: 18px; height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+  transition: all 420ms cubic-bezier(.2,.7,.2,1);
+}
+.ob-pip.on {
+  background: var(--accent);
+  opacity: 1;
+  height: 1.5px;
+  width: 32px;
+}
+
+/* Lightline */
+.ob-lightline {
+  position: fixed;
+  top: 74px; left: 32px; right: 32px;
+  height: 1px;
+  background: var(--rule);
+  z-index: 109;
+  pointer-events: none;
+  overflow: visible;
+}
+.ob-lightline-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--bloom) 70%, transparent) 60%,
+    var(--accent) 100%);
+  box-shadow:
+    0 0 14px color-mix(in oklch, var(--bloom) 60%, transparent),
+    0 0 4px var(--accent);
+  transition: width 760ms cubic-bezier(.2,.7,.2,1);
+}
+.ob-lightline-head {
+  position: absolute;
+  top: 50%;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 18px 2px color-mix(in oklch, var(--bloom) 80%, transparent),
+    0 0 6px var(--accent);
+  transition: left 760ms cubic-bezier(.2,.7,.2,1);
+}
+
+/* Bottom hint bar */
+.ob-hint {
+  position: fixed;
+  bottom: 24px; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  z-index: 110;
+  pointer-events: none;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ob-hint > * { pointer-events: auto; }
+.ob-navhint { display: flex; align-items: center; gap: 14px; }
+.ob-navbtn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--fg-mute);
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 200ms ease;
+}
+.ob-navbtn:hover:not(:disabled) {
+  border-color: var(--fg-mute);
+  color: var(--fg);
+  background: color-mix(in oklch, var(--fg) 4%, transparent);
+}
+.ob-navbtn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Typography */
+.ob-h-mega {
+  font-size: clamp(72px, 11vw, 168px);
+  line-height: 0.92;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-family: "Newsreader", serif;
+  margin: 0;
+}
+.ob-h-1 {
+  font-size: clamp(48px, 6.4vw, 96px);
+  line-height: 1.02;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.ob-h-2 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.1;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.ob-lede {
+  font-size: clamp(18px, 1.4vw, 22px);
+  line-height: 1.5;
+  color: var(--fg-mute);
+  max-width: 48ch;
+  font-weight: 300;
+  margin: 0;
+}
+.ob-micro {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.ob-it {
+  font-style: italic;
+  color: var(--accent);
+}
+.ob-h-mega .ob-it {
+  text-shadow:
+    0 0 32px color-mix(in oklch, var(--bloom) 55%, transparent),
+    0 0 8px color-mix(in oklch, var(--bloom) 40%, transparent);
+}
+.ob-h-1 .ob-it {
+  text-shadow:
+    0 0 24px color-mix(in oklch, var(--bloom) 45%, transparent);
+}
+
+/* Grid helpers */
+.ob-grid { display: grid; gap: 80px; align-items: center; }
+.ob-grid-2 { grid-template-columns: 1fr 1fr; }
+.ob-grid-2-r { grid-template-columns: 1.1fr 0.9fr; }
+
+/* Parameters panel */
+.ob-params {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  max-width: 1280px;
+}
+.ob-param {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+.ob-primitive {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  display: block;
+}
+.ob-param-code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--fg-faint);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+.ob-param-title {
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+  margin: 6px 0 0;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.ob-param-body {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-mute);
+  margin: 14px 0 0;
+  font-weight: 300;
+  max-width: 30ch;
+}
+
+/* Word card */
+.ob-wordcard {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--rule);
+  padding: 20px 28px;
+  border-radius: 2px;
+  min-width: 180px;
+  background: color-mix(in oklch, var(--fg) 2%, transparent);
+}
+.ob-wordcard-lbl {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--fg-faint);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.ob-wordcard-word {
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+/* Diagnostic bars */
+.ob-diag { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 520px; }
+.ob-diag-row { display: grid; grid-template-columns: 120px 1fr 44px; align-items: center; gap: 16px; }
+.ob-diag-name {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--fg-mute);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ob-meter { height: 2px; background: var(--rule); position: relative; overflow: hidden; }
+.ob-meter-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  transition: width 700ms cubic-bezier(.2,.7,.2,1);
+}
+.ob-meter.miss .ob-meter-fill {
+  background: color-mix(in oklch, var(--accent) 35%, var(--fg-faint));
+}
+.ob-pct {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-mute);
+  text-align: right;
+}
+
+/* Verdict chip */
+.ob-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border: 1px solid color-mix(in oklch, var(--accent) 35%, var(--fg-mute));
+  border-radius: 2px;
+  color: color-mix(in oklch, var(--accent) 45%, var(--fg-mute));
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.ob-verdict-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--accent) 45%, var(--fg-mute));
+  box-shadow: 0 0 8px color-mix(in oklch, var(--accent) 35%, transparent);
+  opacity: 0.8;
+  animation: ob-pulse 2.4s ease-in-out infinite;
+}
+@keyframes ob-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+/* Bullets */
+.ob-bullets {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  max-width: 46ch;
+}
+.ob-bullets li {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--fg-mute);
+  padding-left: 20px;
+  position: relative;
+  font-weight: 300;
+}
+.ob-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.7em;
+  width: 8px; height: 1px;
+  background: var(--fg-faint);
+}
+.ob-glow-word {
+  color: var(--accent);
+  font-style: italic;
+  text-shadow:
+    0 0 14px color-mix(in oklch, var(--bloom) 65%, transparent),
+    0 0 4px color-mix(in oklch, var(--bloom) 45%, transparent);
+}
+
+/* Pill button */
+.ob-pill {
+  appearance: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  padding: 18px 30px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 200ms ease;
+  font-weight: 400;
+}
+.ob-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px -10px color-mix(in oklch, var(--accent) 60%, transparent);
+}
+
+/* Chips */
+.ob-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.ob-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--fg-mute);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ob-chip-ok {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--fg-faint);
+}
+.ob-chip.is-on { color: var(--fg); border-color: var(--accent); }
+.ob-chip.is-on .ob-chip-ok {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Aperture */
+.ob-aperture {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.ob-ap-halo {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%,
+      color-mix(in oklch, var(--bloom) 22%, transparent) 0%,
+      color-mix(in oklch, var(--bloom) 8%, transparent) 38%,
+      transparent 62%);
+  filter: blur(2px);
+  transition: opacity 800ms ease;
+}
+.ob-ap-iris {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  transform-origin: center;
+  transition: transform 1100ms cubic-bezier(.65,0,.25,1);
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--bloom) 28%, transparent),
+    0 0 50px -4px color-mix(in oklch, var(--bloom) 36%, transparent),
+    inset 0 0 90px -20px rgba(0,0,0,.85);
+}
+.ob-ap-iris video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  filter: contrast(0.92) saturate(0.45) brightness(0.78);
+}
+.ob-ap-dark {
+  width: 100%; height: 100%;
+  background: radial-gradient(
+    circle at 50% 62%,
+    color-mix(in oklch, var(--bloom) 16%, #000) 0%,
+    #000 72%);
+}
+.ob-ap-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 42% at 50% 26%,
+      color-mix(in oklch, var(--bg) 90%, transparent) 0%,
+      color-mix(in oklch, var(--bg) 65%, transparent) 38%,
+      transparent 72%),
+    linear-gradient(180deg,
+      color-mix(in oklch, var(--bg) 48%, transparent) 0%,
+      transparent 52%,
+      color-mix(in oklch, var(--bg) 22%, transparent) 100%);
+}
+.ob-ap-pulse {
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--bloom) 35%, transparent);
+  opacity: 0.4;
+  animation: ob-apulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ob-apulse {
+  0%,100%{transform:scale(1);opacity:.4}
+  50%{transform:scale(1.06);opacity:.08}
+}
+.ob-ap-label {
+  position: absolute;
+  bottom: -36px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--fg-faint);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+/* Swipe track */
+.ob-swipe-track {
+  position: relative;
+  height: 96px;
+  border: 1px solid var(--rule);
+  border-radius: 96px;
+  background: color-mix(in oklch, var(--fg) 2%, transparent);
+  width: min(720px, 72vw);
+  overflow: hidden;
+}
+.ob-swipe-track .ob-st-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  pointer-events: none;
+  user-select: none;
+}
+.ob-swipe-track .ob-st-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  opacity: 0.18;
+  border-radius: 96px 0 0 96px;
+  will-change: width;
+}
+.ob-swipe-track .ob-st-knob {
+  position: absolute;
+  top: 6px; left: 6px;
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 16px 40px -10px color-mix(in oklch, var(--accent) 70%, transparent);
+  will-change: transform;
+  user-select: none;
+  touch-action: none;
+}
+.ob-swipe-track .ob-st-knob:active { cursor: grabbing; }
+.ob-swipe-track.armed .ob-st-knob {
+  box-shadow: 0 0 0 1px var(--accent), 0 0 36px 4px var(--accent);
+}
+
+/* Handoff splash */
+.ob-handoff {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms ease;
+  z-index: 200;
+}
+.ob-handoff.in {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 700ms;
+}
+.ob-handoff-ready {
+  font-size: 64px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+.ob-handoff-ready .ob-it { font-style: italic; color: var(--accent); }
+
+/* Focus */
+.ob-stage :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ob-stage * { animation-duration: 0.001ms !important; transition-duration: 160ms !important; }
+}
