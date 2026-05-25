@@ -12,20 +12,7 @@ export function PanelFeedback() {
       <div className="ob-pad" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div className="ob-micro" style={{ marginBottom: 34 }}>Preview · Reference and answer</div>
         <div className="ob-feedback-layout">
-          <div className="ob-practice-preview" data-no-drag>
-            <div className="ob-preview-head">
-              <div className="ob-wordcard ob-wordcard-compact">
-                <div className="ob-wordcard-lbl">Prompt</div>
-                <div className="ob-wordcard-word">FAMILY</div>
-              </div>
-              <div className="ob-verdict-card">
-                <span className="ob-verdict-label">Verdict</span>
-                <div className="ob-verdict ob-verdict-compact">
-                  <span className="ob-verdict-pulse" /> NOT QUITE
-                </div>
-              </div>
-            </div>
-
+          <div className="ob-practice-preview ob-practice-preview-movement" data-no-drag>
             <div className="ob-video-pair">
               <div className="ob-mini-video">
                 <div className="ob-mini-video-label">Reference</div>
