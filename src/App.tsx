@@ -9,10 +9,12 @@ import { WebcamView } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
+import { WelcomeSplash } from "./components/WelcomeSplash";
 import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
 
 type SessionState = "idle" | "evaluating" | "result";
+type AppPhase = "login" | "login-exit" | "splash" | "app";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -46,6 +48,7 @@ function SwipeFlash({ direction }: { direction: "left" | "right" }) {
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
+  const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? "app" : "login");
   const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
@@ -64,7 +67,21 @@ export default function App() {
   const item = VOCAB[order[vocabIndex % VOCAB.length]];
 
   const handleLogin = (name: string, powerUser: boolean) => {
-    setProfile(saveProfile(name, powerUser));
+    const saved = saveProfile(name, powerUser);
+    setProfile(saved);
+    if (powerUser) {
+      // Fade out login, then show splash
+      setAppPhase("login-exit");
+      setTimeout(() => setAppPhase("splash"), 450);
+    } else {
+      // Fade out login, then show onboarding
+      setAppPhase("login-exit");
+      setTimeout(() => setAppPhase("app"), 450);
+    }
+  };
+
+  const handleSplashDone = () => {
+    setAppPhase("app");
   };
 
   const handleTutorialComplete = useCallback(() => {
@@ -134,7 +151,18 @@ export default function App() {
     else if (delta < -60) handleSwipePrev();
   };
 
-  if (!profile) return <LoginScreen onLogin={handleLogin} />;
+  if (appPhase === "login" || appPhase === "login-exit") {
+    return <LoginScreen onLogin={handleLogin} exiting={appPhase === "login-exit"} />;
+  }
+
+  if (appPhase === "splash" && profile) {
+    return <WelcomeSplash name={profile.name} onDone={handleSplashDone} />;
+  }
+
+  // appPhase === "app" — profile must exist; if somehow not, fall back to login
+  if (!profile) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   const showTutorial = !profile.tutorialDone || forceOnboarding;
 
