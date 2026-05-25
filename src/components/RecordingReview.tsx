@@ -2,9 +2,10 @@ import { useRef, useState } from "react";
 
 type Props = {
   url: string;
+  overlay?: React.ReactNode;
 };
 
-export function RecordingReview({ url }: Props) {
+export function RecordingReview({ url, overlay }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
 
@@ -75,6 +76,7 @@ export function RecordingReview({ url }: Props) {
       >
         Your attempt
       </span>
+      {overlay}
     </section>
   );
 }

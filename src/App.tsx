@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
+import { useGestureNav } from "./hooks/useGestureNav";
+import { GestureHint } from "./components/GestureHint";
 import { VOCAB } from "./data/vocab";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
@@ -193,8 +195,20 @@ export default function App() {
   const handleSwipeNext = useCallback(() => flashThen("right", handleNext), [flashThen, handleNext]);
   const handleSwipePrev = useCallback(() => flashThen("left", handlePrev), [flashThen, handlePrev]);
 
+  const displayState: "idle" | "recording" | "evaluating" | "result" =
+    sessionState === "idle" ? "idle" :
+    sessionState === "evaluating" ? "evaluating" : "result";
+
   // Single swipe: right = next sign, left = previous sign
   useHandSwipe(videoRef, sessionState === "result", handleSwipeNext, handleSwipePrev);
+
+  // Dwell gesture nav: thumbs-up = next, open-5 = retry (active only in result state)
+  const { gesture, dwellProgress } = useGestureNav(
+    videoRef,
+    displayState === "result",
+    handleNext,
+    handleRetry,
+  );
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (sessionState !== "result") return;
@@ -222,10 +236,10 @@ export default function App() {
   }
 
   const showTutorial = !profile.tutorialDone || forceOnboarding;
-
-  const displayState: "idle" | "recording" | "evaluating" | "result" =
-    sessionState === "idle" ? "idle" :
-    sessionState === "evaluating" ? "evaluating" : "result";
+  const gestureHint = displayState === "result"
+    ? <GestureHint gesture={gesture} dwellProgress={dwellProgress} />
+    : null;
+  const reviewVisible = displayState === "result" && !!lastRecordingUrl;
 
   return (
     <div
@@ -282,23 +296,33 @@ export default function App() {
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
             <div className={`flex-1 grid gap-3 min-h-0 ${!videoHidden ? "grid-cols-2" : "grid-cols-1"}`}>
-              {displayState === "result" && lastRecordingUrl ? (
-                <RecordingReview url={lastRecordingUrl} />
-              ) : (
-                <WebcamView
-                  videoRef={videoRef}
-                  sessionState={showTutorial ? "idle" : displayState}
-                  onFramesReady={handleFramesReady}
-                  onRecordingReady={handleRecordingReady}
-                  overlay={
-                    swipeFlash
-                      ? <SwipeFlash direction={swipeFlash} />
-                      : displayState === "result" && passed !== null
-                      ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-                      : null
-                  }
-                />
-              )}
+              <div className="relative flex min-h-0">
+                <div className={`flex min-h-0 flex-1 ${reviewVisible ? "pointer-events-none opacity-0" : ""}`}>
+                  <WebcamView
+                    videoRef={videoRef}
+                    sessionState={showTutorial ? "idle" : displayState}
+                    onFramesReady={handleFramesReady}
+                    onRecordingReady={handleRecordingReady}
+                    overlay={
+                      swipeFlash
+                        ? <SwipeFlash direction={swipeFlash} />
+                        : displayState === "result" && passed !== null
+                        ? (
+                          <>
+                            <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+                            {gestureHint}
+                          </>
+                        )
+                        : null
+                    }
+                  />
+                </div>
+                {reviewVisible && lastRecordingUrl && (
+                  <div className="absolute inset-0 flex">
+                    <RecordingReview url={lastRecordingUrl} overlay={gestureHint} />
+                  </div>
+                )}
+              </div>
               {!videoHidden && (
                 <SignVideo
                   item={item}
