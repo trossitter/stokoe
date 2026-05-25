@@ -4,24 +4,41 @@ type DezMeta = {
   dez_labels: string[];
 };
 
+const MODEL_CANDIDATES = [
+  {
+    model: "/model/dez/model.onnx",
+    meta: "/model/dez/model.meta.json",
+  },
+  {
+    model: "/model/dez/dez_classifier.onnx",
+    meta: "/model/dez/dez_meta.json",
+  },
+];
+
 let _session: ort.InferenceSession | null = null;
 let _labels: string[] | null = null;
 let _loading: Promise<boolean> | null = null;
 
 async function load(): Promise<boolean> {
-  try {
-    const [session, meta] = await Promise.all([
-      ort.InferenceSession.create("/model/dez/dez_classifier.onnx", {
-        executionProviders: ["wasm"],
-      }),
-      fetch("/model/dez/dez_meta.json").then((r) => r.json() as Promise<DezMeta>),
-    ]);
-    _session = session;
-    _labels = meta.dez_labels;
-    return true;
-  } catch {
-    return false;
+  for (const candidate of MODEL_CANDIDATES) {
+    try {
+      const [session, meta] = await Promise.all([
+        ort.InferenceSession.create(candidate.model, {
+          executionProviders: ["wasm"],
+        }),
+        fetch(candidate.meta).then((r) => {
+          if (!r.ok) throw new Error(`Missing metadata: ${candidate.meta}`);
+          return r.json() as Promise<DezMeta>;
+        }),
+      ]);
+      _session = session;
+      _labels = meta.dez_labels;
+      return true;
+    } catch {
+      // Try the next model naming convention.
+    }
   }
+  return false;
 }
 
 // Returns a predictor function if the ONNX model is available, null otherwise.

@@ -110,7 +110,10 @@ export function usePresenceTrigger(
   }, [roi]);
 
   useEffect(() => {
-    if (!enabled) { reset(); return; }
+    if (!enabled) {
+      const resetId = window.setTimeout(reset, 0);
+      return () => window.clearTimeout(resetId);
+    }
 
     const tick = (now: number) => {
       const video = videoRef.current;
