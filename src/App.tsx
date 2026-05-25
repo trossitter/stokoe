@@ -1,10 +1,9 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
 import { useGestureNav } from "./hooks/useGestureNav";
 import { GestureHint } from "./components/GestureHint";
 import { VOCAB } from "./data/vocab";
 import type { VocabItem } from "./data/vocab";
-import { NOTATION } from "./data/notation";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
 import { getProfile, saveProfile, markTutorialDone, getProgress, recordAttempt } from "./store/progress";
@@ -23,6 +22,7 @@ import { RecordingReview } from "./components/RecordingReview";
 
 type SessionState = "idle" | "recording" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
+type GestureConfirmation = "Skip" | "Next" | "Record" | "Retry";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -53,86 +53,144 @@ function SwipeFlash({ direction }: { direction: "left" | "right" }) {
   );
 }
 
+function GestureActionFlash({ label }: { label: GestureConfirmation }) {
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center rounded-[28px] pointer-events-none"
+      style={{
+        zIndex: 45,
+        background: "oklch(0.12 0.02 260 / 0.58)",
+        backdropFilter: "blur(4px)",
+        boxShadow: "inset 0 0 0 1px oklch(0.94 0.042 85 / 0.28)",
+      }}
+    >
+      <div
+        className="rounded-2xl border px-8 py-5 text-center shadow-2xl"
+        style={{
+          background: "oklch(0.18 0.024 260 / 0.72)",
+          borderColor: "oklch(0.94 0.042 85 / 0.38)",
+        }}
+      >
+        <div
+          className="mb-2 text-[10px] uppercase tracking-[0.22em]"
+          style={{
+            color: "oklch(0.94 0.042 85 / 0.72)",
+            fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+          }}
+        >
+          Gesture accepted
+        </div>
+        <div
+          className="text-5xl leading-none text-slate-50"
+          style={{ fontFamily: "'Newsreader', Georgia, serif" }}
+        >
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PromptFocusOverlay({
   item,
-  vocabIndex,
-  vocabTotal,
   paused,
-  started,
   sessionState,
+  docked,
+  onDockToggle,
   onStart,
 }: {
   item: VocabItem;
-  vocabIndex: number;
-  vocabTotal: number;
   paused: boolean;
-  started: boolean;
   sessionState: SessionState;
+  docked: boolean;
+  onDockToggle: () => void;
   onStart: () => void;
 }) {
-  const notation = NOTATION[item.id];
   const hiddenWhileSigning = sessionState === "recording" || sessionState === "evaluating";
 
   return (
     <div
-      className={`pointer-events-none absolute inset-x-4 top-1/2 z-30 flex -translate-y-1/2 justify-center transition-all duration-500 ease-out ${
-        hiddenWhileSigning ? "scale-95 opacity-0" : "scale-100 opacity-100"
-      }`}
+      className={`pointer-events-none absolute inset-x-3 z-30 flex justify-center transition-all duration-500 ease-out ${
+        docked ? "top-3" : "top-1/2 -translate-y-1/2"
+      } ${hiddenWhileSigning ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
       aria-hidden={hiddenWhileSigning}
     >
       <div
-        className="max-w-[440px] rounded-2xl border px-8 py-5 text-center shadow-2xl"
+        role="button"
+        tabIndex={hiddenWhileSigning ? -1 : 0}
+        onClick={onDockToggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onDockToggle();
+          }
+        }}
+        className={`border text-center shadow-xl outline-none transition-all duration-500 ease-out focus-visible:ring-2 focus-visible:ring-[oklch(0.94_0.042_85)] ${
+          hiddenWhileSigning ? "pointer-events-none" : "pointer-events-auto cursor-pointer"
+        } ${
+          docked
+            ? "max-w-[520px] rounded-xl px-4 py-2"
+            : "max-w-[360px] rounded-2xl px-6 py-4"
+        }`}
         style={{
-          background: "oklch(0.18 0.024 260 / 0.72)",
-          borderColor: "oklch(0.94 0.042 85 / 0.42)",
-          backdropFilter: "blur(14px)",
-          boxShadow: "0 18px 60px rgb(0 0 0 / 0.32), 0 0 34px oklch(0.94 0.042 85 / 0.16)",
+          background: docked ? "oklch(0.18 0.024 260 / 0.46)" : "oklch(0.18 0.024 260 / 0.66)",
+          borderColor: docked ? "oklch(0.94 0.042 85 / 0.22)" : "oklch(0.94 0.042 85 / 0.34)",
+          backdropFilter: "blur(10px)",
+          boxShadow: docked
+            ? "0 8px 24px rgb(0 0 0 / 0.20)"
+            : "0 16px 44px rgb(0 0 0 / 0.28), 0 0 28px oklch(0.94 0.042 85 / 0.12)",
         }}
       >
-        <div className="mb-1 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.22em] text-slate-400">
-          <span>Sign this word</span>
-          <span className="text-slate-600">·</span>
-          <span>{vocabIndex + 1} / {vocabTotal}</span>
-        </div>
-        {paused && (
-          <div
-            className="mb-2 inline-flex rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.22em]"
-            style={{
-              color: "oklch(0.94 0.042 85)",
-              borderColor: "oklch(0.94 0.042 85 / 0.42)",
-              background: "oklch(0.94 0.042 85 / 0.10)",
-            }}
-          >
-            {started ? "Practice paused" : "Read first"}
+        {docked ? (
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span
+              className="text-xl font-semibold leading-none text-slate-50"
+              style={{ fontFamily: "'Newsreader', Georgia, serif" }}
+            >
+              {item.word}
+            </span>
+            {paused && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onStart();
+                }}
+                className="rounded-md border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors hover:brightness-110"
+                style={{
+                  background: "oklch(0.94 0.042 85)",
+                  borderColor: "oklch(0.94 0.042 85)",
+                  color: "oklch(0.18 0.024 260)",
+                }}
+              >
+                Sign it
+              </button>
+            )}
           </div>
-        )}
-        <div
-          className="text-5xl font-semibold leading-none text-slate-50"
-          style={{ fontFamily: "'Newsreader', Georgia, serif" }}
-        >
-          {item.word}
-        </div>
-        {notation && (
-          <div
-            className="mt-2 text-lg tracking-[0.35em] text-slate-300"
-            style={{ fontFamily: "StokoeTempo, monospace" }}
-            title={notation.readable}
-          >
-            {notation.ascii}
+        ) : (
+          <div>
+            <div
+              className="text-4xl font-semibold leading-none text-slate-50 sm:text-5xl"
+              style={{ fontFamily: "'Newsreader', Georgia, serif" }}
+            >
+              {item.word}
+            </div>
+            {paused && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onStart();
+                }}
+                className="mt-4 rounded-lg border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:brightness-110"
+                style={{
+                  background: "oklch(0.94 0.042 85)",
+                  borderColor: "oklch(0.94 0.042 85)",
+                  color: "oklch(0.18 0.024 260)",
+                }}
+              >
+                Sign it
+              </button>
+            )}
           </div>
-        )}
-        {paused && (
-          <button
-            onClick={onStart}
-            className="pointer-events-auto mt-5 rounded-xl border px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition-colors hover:brightness-110"
-            style={{
-              background: "oklch(0.94 0.042 85)",
-              borderColor: "oklch(0.94 0.042 85)",
-              color: "oklch(0.18 0.024 260)",
-            }}
-          >
-            {started ? "Resume" : "Start"}
-          </button>
         )}
       </div>
     </div>
@@ -152,11 +210,13 @@ export default function App() {
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
-  const [videoHidden, setVideoHidden] = useState(false);
+  const [videoHidden, setVideoHidden] = useState(true);
   const [userVideoHidden, setUserVideoHidden] = useState(false);
   const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
   const [practicePaused, setPracticePaused] = useState(true);
   const [practiceStarted, setPracticeStarted] = useState(false);
+  const [promptDocked, setPromptDocked] = useState(false);
+  const [gestureConfirmation, setGestureConfirmation] = useState<GestureConfirmation | null>(null);
   const [recordRequestId, setRecordRequestId] = useState(0);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => new URLSearchParams(location.search).has("onboarding")
@@ -164,6 +224,7 @@ export default function App() {
 
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
+  const gestureConfirmationTimerRef = useRef<number | null>(null);
 
   const activeOrder = lessonOrder ?? order;
   const item = VOCAB[activeOrder[vocabIndex % activeOrder.length]];
@@ -231,11 +292,35 @@ export default function App() {
     setSessionState("idle");
     setPracticePaused(true);
     setPracticeStarted(false);
+    setPromptDocked(false);
+    setVideoHidden(true);
+    setGestureConfirmation(null);
+    if (gestureConfirmationTimerRef.current) {
+      window.clearTimeout(gestureConfirmationTimerRef.current);
+      gestureConfirmationTimerRef.current = null;
+    }
     setRecordRequestId(0);
     setLastRecordingUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
+  }, []);
+
+  const showGestureConfirmation = useCallback((label: GestureConfirmation) => {
+    if (gestureConfirmationTimerRef.current) {
+      window.clearTimeout(gestureConfirmationTimerRef.current);
+    }
+    setGestureConfirmation(label);
+    gestureConfirmationTimerRef.current = window.setTimeout(() => {
+      setGestureConfirmation(null);
+      gestureConfirmationTimerRef.current = null;
+    }, 1100);
+  }, []);
+
+  useEffect(() => () => {
+    if (gestureConfirmationTimerRef.current) {
+      window.clearTimeout(gestureConfirmationTimerRef.current);
+    }
   }, []);
 
   const handleStartLesson = useCallback((indices: number[]) => {
@@ -309,20 +394,28 @@ export default function App() {
     sessionState === "evaluating" ? "evaluating" : "result";
 
   const handleGestureNext = useCallback(() => {
-    if (displayState === "result" || displayState === "idle") {
+    if (displayState === "result") {
+      showGestureConfirmation("Next");
+      handleNext();
+      return;
+    }
+    if (displayState === "idle") {
+      showGestureConfirmation("Skip");
       handleNext();
     }
-  }, [displayState, handleNext]);
+  }, [displayState, handleNext, showGestureConfirmation]);
 
   const handleGestureRetry = useCallback(() => {
     if (displayState === "result") {
+      showGestureConfirmation("Retry");
       handleRetry();
       return;
     }
     if (displayState === "idle") {
+      showGestureConfirmation("Record");
       handleRecordAttempt();
     }
-  }, [displayState, handleRecordAttempt, handleRetry]);
+  }, [displayState, handleRecordAttempt, handleRetry, showGestureConfirmation]);
 
   // Single swipe: right = next sign, left = previous sign
   useHandSwipe(videoRef, !showTutorial && !showWordPicker && !practicePaused && sessionState === "result", handleSwipeNext, handleSwipePrev);
@@ -363,6 +456,22 @@ export default function App() {
   const gestureHint = displayState === "result" || displayState === "idle"
     ? <GestureHint gesture={gesture} dwellProgress={dwellProgress} displayState={displayState} />
     : null;
+  const gestureConfirmationOverlay = gestureConfirmation
+    ? <GestureActionFlash label={gestureConfirmation} />
+    : null;
+  const practiceOverlay = swipeFlash
+    ? <SwipeFlash direction={swipeFlash} />
+    : (
+      <>
+        {displayState === "result" && passed !== null ? (
+          <>
+            <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+            {gestureHint}
+          </>
+        ) : gestureHint}
+        {gestureConfirmationOverlay}
+      </>
+    );
   const reviewVisible = !showTutorial && !showWordPicker && displayState === "result" && !!lastRecordingUrl;
 
   return (
@@ -448,14 +557,13 @@ export default function App() {
               paused={practicePaused}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
-            <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-[minmax(132px,0.78fr)_minmax(0,1fr)]">
+            <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-1 md:grid-cols-2">
               <PromptFocusOverlay
                 item={item}
-                vocabIndex={vocabIndex % activeOrder.length}
-                vocabTotal={activeOrder.length}
                 paused={practicePaused}
-                started={practiceStarted}
                 sessionState={displayState}
+                docked={promptDocked}
+                onDockToggle={() => setPromptDocked((docked) => !docked)}
                 onStart={handlePracticePauseToggle}
               />
               <div className="flex min-w-0 flex-col gap-2">
@@ -475,18 +583,7 @@ export default function App() {
                       recordRequestId={recordRequestId}
                       onFramesReady={handleFramesReady}
                       onRecordingReady={handleRecordingReady}
-                      overlay={
-                        swipeFlash
-                          ? <SwipeFlash direction={swipeFlash} />
-                          : displayState === "result" && passed !== null
-                          ? (
-                            <>
-                              <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-                              {gestureHint}
-                            </>
-                          )
-                          : gestureHint
-                      }
+                      overlay={practiceOverlay}
                     />
                   )}
                 </div>
@@ -495,8 +592,13 @@ export default function App() {
                     <RecordingReview
                       url={lastRecordingUrl}
                       paused={practicePaused}
-                      hidden={userVideoHidden}
-                      overlay={gestureHint}
+                      hidden={false}
+                      overlay={
+                        <>
+                          {gestureHint}
+                          {gestureConfirmationOverlay}
+                        </>
+                      }
                     />
                   </div>
                 )}
@@ -524,7 +626,6 @@ export default function App() {
               hintKey={hintKey}
               confidence={confidence}
               progress={progress}
-              paused={practicePaused}
             />
           </div>
         </main>
