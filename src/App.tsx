@@ -23,6 +23,7 @@ import { RecordingReview } from "./components/RecordingReview";
 
 type SessionState = "idle" | "recording" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
+const NUMBER_SIGN_IDS = new Set(["one", "two", "three", "four", "six", "seven", "eight", "nine"]);
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -236,7 +237,11 @@ export default function App() {
   }, [resetPracticeState]);
 
   const handleDecideForMe = useCallback(() => {
-    handleStartLesson(shuffle(VOCAB.map((_, index) => index)).slice(0, 10));
+    const nonNumberIndices = VOCAB
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => !NUMBER_SIGN_IDS.has(item.id))
+      .map(({ index }) => index);
+    handleStartLesson(shuffle(nonNumberIndices).slice(0, 10));
   }, [handleStartLesson]);
 
   const handleChangeLesson = useCallback(() => {

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { VocabItem } from "../data/vocab";
 
 const LESSON_SIZE = 10;
+const NUMBER_SIGN_IDS = new Set(["one", "two", "three", "four", "six", "seven", "eight", "nine"]);
 
 type Props = {
   vocab: VocabItem[];
@@ -13,6 +14,17 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
   const [showSetup, setShowSetup] = useState(true);
   const [selected, setSelected] = useState<number[]>([]);
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const displayVocab = useMemo(
+    () => vocab
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => {
+        const aIsNumber = NUMBER_SIGN_IDS.has(a.item.id);
+        const bIsNumber = NUMBER_SIGN_IDS.has(b.item.id);
+        if (aIsNumber !== bIsNumber) return aIsNumber ? 1 : -1;
+        return a.index - b.index;
+      }),
+    [vocab],
+  );
 
   const toggle = (index: number) => {
     setSelected((current) => {
@@ -89,7 +101,7 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {vocab.map((item, index) => {
+          {displayVocab.map(({ item, index }) => {
             const isSelected = selectedSet.has(index);
             const isDisabled = !isSelected && selected.length >= LESSON_SIZE;
 
