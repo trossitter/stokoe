@@ -1,16 +1,14 @@
 /**
  * notationVerifier.ts — Stokoe notation verifier using MediaPipe + ONNX dez classifier.
  *
- * Replaces the raw-frame CNN+LSTM approach.
  * Architecture:
  *   Tab  — rule-based: hand position relative to MediaPipe face/body anchors
  *   Dez  — ONNX MLP: 21 normalized landmarks → handshape category
  *   Sig  — rule-based: motion pattern detection over landmark sequence
  *
- * Pass logic (Requirement 7 reinterpreted via notation framework):
- *   - Any genuine attempt (hands visible, reasonable approximation) passes
- *   - Fail only on no interaction or all three parameters completely wrong
- *   - Confidence threshold documented per-sign (Requirement 8)
+ * Pass logic: all three parameters must pass. Learners pass when they sign
+ * correctly, not merely when they engage. If the Dez model is unavailable,
+ * dezPassed defaults to true (so Tab + Sig are the effective gatekeepers).
  */
 
 import type { NotationEntry } from "../data/notation";
@@ -68,8 +66,8 @@ function checkTab(
   const y = wrist.y;  // 0=top, 1=bottom
   const x = wrist.x;
 
-  let passed = false;
-  let hint = "";
+  let passed: boolean;
+  let hint: string;
 
   const faceTop = faceLm ? Math.min(...faceLm.map(l => l.y)) : 0.1;
   const faceBottom = faceLm ? Math.max(...faceLm.map(l => l.y)) : 0.7;
@@ -131,8 +129,8 @@ function checkSig(
   const totalMovement = dx.reduce((s, v) => s + Math.abs(v), 0) +
                         dy.reduce((s, v) => s + Math.abs(v), 0);
 
-  let passed = false;
-  let hint = "";
+  let passed: boolean;
+  let hint: string;
 
   switch (expectedSig) {
     case "D@": {  // circular
@@ -267,12 +265,11 @@ export async function verifyNotation(
   // Sig check
   const sigResult = checkSig(frames, notation.sig);
 
-  // Pass logic — generous thresholds ("impossible to fail if engaged")
-  // Pass if at least 2 of 3 parameters are satisfied
+  // Pass requires all three parameters. Learners pass when they sign correctly.
   const paramsPassed = [tabResult.passed, dezPassed, sigResult.passed]
     .filter(Boolean).length;
 
-  const passed = paramsPassed >= 2;
+  const passed = paramsPassed >= 3;
   const confidence = (tabResult.confidence + dezConfidence + sigResult.confidence) / 3;
 
   // Identify which parameter to hint on
