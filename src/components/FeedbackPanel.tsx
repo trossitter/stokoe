@@ -10,7 +10,6 @@ type Props = {
   hintKey: HintKey | null;
   confidence: number | null;
   progress: Progress;
-  paused?: boolean;
 };
 
 const HINT_LABEL: Record<HintKey, string> = {
@@ -21,7 +20,7 @@ const HINT_LABEL: Record<HintKey, string> = {
   framing: "Camera framing",
 };
 
-export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence, progress, paused = false }: Props) {
+export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence, progress }: Props) {
   return (
     <section
       className="rounded-2xl shadow-sm border p-4 flex flex-col min-h-0 gap-4"
@@ -35,14 +34,6 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
       {/* Live feedback */}
       <div className="flex-1 flex flex-col gap-3">
         <h2 className="text-sm font-medium text-slate-200">Feedback</h2>
-
-        {sessionState === "idle" && (
-          <p className="text-sm text-slate-400">
-            {paused
-              ? "Start from the prompt card when you are ready."
-              : "Read the prompt, get situated, then press Record attempt when you are ready."}
-          </p>
-        )}
 
         {sessionState === "recording" && (
           <p className="text-sm text-red-300 font-medium">Recording your sign…</p>

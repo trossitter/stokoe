@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import { isThumbsUp, isOpenFive } from "./useGestureNav";
+import { detectGestureFromHands, isThumbsUp, isOpenFive } from "./useGestureNav";
 
 // Landmark indices used by both functions:
 //   Thumb:  2=IP joint (wrist side), 4=tip
@@ -32,6 +32,56 @@ function lm(overrides: LandmarkOverrides = {}): NormalizedLandmark[] {
       : {}),
   }));
 }
+
+function thumbsUpHand(): NormalizedLandmark[] {
+  return lm({
+    2: { y: 0.5 },
+    4: { y: 0.40 },
+    6: { y: 0.30 },
+    8: { y: 0.40 },
+    10: { y: 0.30 },
+    12: { y: 0.40 },
+    14: { y: 0.30 },
+    16: { y: 0.40 },
+    18: { y: 0.30 },
+    20: { y: 0.40 },
+  });
+}
+
+function openFiveHand(): NormalizedLandmark[] {
+  return lm({
+    2: { y: 0.5 },
+    4: { y: 0.44 },
+    5: { y: 0.5 },
+    8: { y: 0.40 },
+    9: { y: 0.5 },
+    12: { y: 0.40 },
+    13: { y: 0.5 },
+    16: { y: 0.40 },
+    17: { y: 0.5 },
+    20: { y: 0.40 },
+  });
+}
+
+// ─── Multi-hand gesture selection ────────────────────────────────────────────
+
+describe("detectGestureFromHands", () => {
+  it("accepts thumbs-up from the first detected hand", () => {
+    expect(detectGestureFromHands([thumbsUpHand()])).toBe("next");
+  });
+
+  it("accepts thumbs-up from a later detected hand", () => {
+    expect(detectGestureFromHands([lm(), thumbsUpHand()])).toBe("next");
+  });
+
+  it("prefers thumbs-up over open-5 when both hands are visible", () => {
+    expect(detectGestureFromHands([openFiveHand(), thumbsUpHand()])).toBe("next");
+  });
+
+  it("accepts open-5 from a later detected hand", () => {
+    expect(detectGestureFromHands([lm(), openFiveHand()])).toBe("retry");
+  });
+});
 
 // ─── isThumbsUp ──────────────────────────────────────────────────────────────
 

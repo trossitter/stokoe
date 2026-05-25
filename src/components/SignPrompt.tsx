@@ -62,9 +62,6 @@ export function SignPrompt({
               <p className="mt-1 text-lg font-medium text-slate-100">{record?.attempts ?? 0}</p>
             </div>
           </div>
-          <p className="mt-3 text-xs text-slate-500">
-            The word to sign stays centered over the practice area.
-          </p>
         </div>
 
         {sessionState === "result" && passed !== null && (
@@ -74,13 +71,9 @@ export function SignPrompt({
         )}
       </div>
 
+      {!(sessionState === "idle" && paused) && (
       <div className="mt-4 flex gap-2 min-h-[48px]">
-        {sessionState === "idle" && (
-          paused ? (
-            <p className="flex-1 py-3 text-center text-sm text-slate-500">
-              Ready when you are.
-            </p>
-          ) : (
+        {sessionState === "idle" && !paused && (
             <div className="flex-1 flex flex-col gap-1.5">
               <button
                 onClick={onRecord}
@@ -97,7 +90,6 @@ export function SignPrompt({
                 You will get a short cue before capture starts.
               </p>
             </div>
-          )
         )}
         {sessionState === "recording" && (
           <div className="flex-1 py-3 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-medium text-center">
@@ -129,6 +121,7 @@ export function SignPrompt({
           </div>
         )}
       </div>
+      )}
     </section>
   );
 }

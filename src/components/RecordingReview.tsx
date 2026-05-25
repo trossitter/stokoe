@@ -70,7 +70,7 @@ export function RecordingReview({ url, paused: practicePaused = false, hidden = 
         style={{
           width: "100%",
           height: "100%",
-          objectFit: "cover",
+          objectFit: "contain",
           transform: "scaleX(-1)",
           filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
           opacity: hidden ? 0 : 1,

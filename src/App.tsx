@@ -162,7 +162,7 @@ function PromptFocusOverlay({
                   color: "oklch(0.18 0.024 260)",
                 }}
               >
-                Sign it
+                Start signing
               </button>
             )}
           </div>
@@ -187,7 +187,7 @@ function PromptFocusOverlay({
                   color: "oklch(0.18 0.024 260)",
                 }}
               >
-                Sign it
+                Start signing
               </button>
             )}
           </div>

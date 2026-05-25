@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import type { VocabItem } from "../data/vocab";
+import { NOTATION } from "../data/notation";
 import { SIGN_VIDEOS } from "../data/videos";
 
 type Props = {
@@ -29,7 +30,10 @@ function PlayPauseButton({
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
       className="absolute bottom-2 left-2 flex h-7 items-center justify-center text-white transition-colors hover:bg-black/70"
       style={{ background: "rgba(0,0,0,0.5)", borderRadius: 6, padding: "4px 8px" }}
       aria-label={label}
@@ -47,9 +51,31 @@ function PlayPauseButton({
   );
 }
 
+function ReferenceToggleButton({
+  hidden,
+  onToggleHidden,
+}: {
+  hidden: boolean;
+  onToggleHidden: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleHidden();
+      }}
+      className="absolute bottom-3 right-3 z-20 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      aria-label={hidden ? "Show reference video" : "Hide reference video"}
+    >
+      {hidden ? "Show" : "Hide"}
+    </button>
+  );
+}
+
 function Placeholder({ word, reason }: { word: string; reason: "missing" | "error" }) {
   return (
-    <div className="aspect-[4/3] flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-xl border border-slate-700">
+    <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-[28px] border border-slate-700">
       <svg
         className="w-6 h-6 text-slate-500"
         fill="none"
@@ -124,42 +150,58 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
     }
   };
 
+  const handleMediaKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onToggleHidden();
+  };
+
   const handleSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const idx = Number(e.target.value);
     setSpeed(SPEED_STEPS[idx]);
   };
 
   const speedIndex = SPEED_STEPS.indexOf(speed);
+  const notation = NOTATION[item.id];
 
   return (
     <section
-      className="rounded-2xl shadow-sm border p-3 flex min-w-0 flex-col gap-2"
-      style={{
-        background: "oklch(0.26 0.030 260 / 0.75)",
-        backdropFilter: "blur(8px)",
-        borderColor: "oklch(0.36 0.028 260 / 0.6)",
-      }}
+      className="flex min-w-0 flex-col gap-2"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-400">Reference</span>
-      </div>
-
       {/* Video area */}
       {hidden ? (
-        <div className="aspect-[4/3] flex flex-col items-center justify-center gap-2 bg-slate-900/80 rounded-xl border border-slate-700">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onToggleHidden}
+          onKeyDown={handleMediaKeyDown}
+          className="relative flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-[28px] border border-slate-700/60 bg-slate-900/80 text-center transition-colors hover:border-slate-500/80 hover:bg-slate-900"
+          style={{ boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
+          aria-label="Show reference video"
+        >
+          <span className="absolute left-5 top-4 text-xs font-medium text-slate-400">Reference</span>
           <p className="text-sm text-slate-400">Reference hidden</p>
+          <ReferenceToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
         </div>
       ) : !videoUrl ? (
         <Placeholder word={item.word} reason="missing" />
       ) : status.error ? (
         <Placeholder word={item.word} reason="error" />
       ) : (
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onToggleHidden}
+          onKeyDown={handleMediaKeyDown}
+          className="relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-[28px] border border-slate-700/60 bg-slate-900 outline-none transition-colors hover:border-slate-500/80 focus-visible:ring-2 focus-visible:ring-[oklch(0.94_0.042_85)]"
+          style={{ boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
+          aria-label="Hide reference video"
+        >
           {/* Loading pulse — shown until canplay fires */}
           {status.loading && (
-            <div className="absolute inset-0 bg-slate-800 animate-pulse rounded-xl" />
+            <div className="absolute inset-0 bg-slate-800 animate-pulse" />
           )}
+          <span className="absolute left-5 top-4 z-10 text-xs font-medium text-slate-300">Reference</span>
           {/*
             key={item.id} remounts the video element on sign change so the browser
             discards the previous src and resets playback to the beginning automatically.
@@ -189,35 +231,38 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
             onClick={handlePlayPause}
             label={status.paused ? "Play reference" : "Pause reference"}
           />
+          <div
+            className="absolute bottom-3 left-12 right-20 z-20 flex h-8 items-center gap-2 rounded-md border border-white/10 bg-black/50 px-2 text-white backdrop-blur"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className="text-[10px] uppercase tracking-[0.12em] text-white/55">Speed</span>
+            <input
+              type="range"
+              min={0}
+              max={SPEED_STEPS.length - 1}
+              step={1}
+              value={speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex}
+              onClick={(event) => event.stopPropagation()}
+              onChange={handleSpeedChange}
+              className="h-1 min-w-0 flex-1 cursor-pointer accent-slate-200"
+              aria-label="Playback speed"
+            />
+            <span className="w-7 text-right text-[10px] text-white/70">
+              {speed}×
+            </span>
+          </div>
+          <ReferenceToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
+          {notation && (
+            <span
+              className="pointer-events-none absolute bottom-14 right-3 z-10 rounded-md border border-white/10 bg-black/35 px-2.5 py-1 text-xs tracking-[0.16em] text-slate-300 backdrop-blur"
+              style={{ fontFamily: "StokoeTempo, monospace" }}
+              title={notation.readable}
+            >
+              {notation.ascii}
+            </span>
+          )}
         </div>
       )}
-
-      {/* Speed controls — only shown when video is available */}
-      {!hidden && videoUrl && !status.error && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 shrink-0">Speed</span>
-          <input
-            type="range"
-            min={0}
-            max={SPEED_STEPS.length - 1}
-            step={1}
-            value={speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex}
-            onChange={handleSpeedChange}
-            className="flex-1 h-1 accent-slate-400 cursor-pointer"
-            aria-label="Playback speed"
-          />
-          <span className="text-xs text-slate-400 w-8 text-right shrink-0">
-            {speed}×
-          </span>
-        </div>
-      )}
-
-      <button
-        onClick={onToggleHidden}
-        className="mt-1 rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70"
-      >
-        {hidden ? "Show reference" : "Hide reference"}
-      </button>
     </section>
   );
 }

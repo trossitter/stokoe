@@ -204,7 +204,7 @@ export function WordPicker({ vocab, onStart }: Props) {
         })}
       </div>
 
-      <div className={`min-h-0 flex-1 overflow-y-auto pr-1 ${selected.length > 0 ? "pb-24" : ""}`}>
+      <div className={`min-h-0 flex-1 overflow-y-auto pr-1 ${selected.length > 0 ? "pb-28" : ""}`}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {displayVocab.map(({ item, index }) => {
             const isSelected = selectedSet.has(index);
@@ -233,22 +233,21 @@ export function WordPicker({ vocab, onStart }: Props) {
 
       {selected.length > 0 && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-5 py-4 md:px-8"
-          style={{
-            background: "linear-gradient(to top, oklch(0.18 0.024 260 / 0.96), oklch(0.18 0.024 260 / 0.72), transparent)",
-          }}
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 justify-center px-5 md:px-8"
         >
           <button
             type="button"
             onClick={() => onStart(selected)}
-            className="pointer-events-auto rounded-xl border px-8 py-3 text-sm font-semibold transition-colors hover:brightness-110"
+            className="pointer-events-auto inline-flex items-center justify-center rounded-xl border px-8 py-3 text-sm font-semibold transition-colors hover:brightness-110"
             style={{
               background: "oklch(0.94 0.042 85)",
               borderColor: "oklch(0.94 0.042 85)",
               color: "oklch(0.18 0.024 260)",
             }}
           >
-            {selected.length === 1 ? "Start" : `Start · ${selected.length}`}
+            <span className="-translate-y-px">
+              {selected.length === 1 ? "Start" : `Start · ${selected.length}`}
+            </span>
           </button>
         </div>
       )}

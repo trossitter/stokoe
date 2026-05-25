@@ -16,7 +16,7 @@ export function PanelBegin({ onCommit, active = false }: Props) {
         </h2>
         <SwipeTrack onCommit={onCommit} active={active} label="Swipe to begin" finishedLabel="Beginning" />
         <div className="ob-micro" style={{ marginTop: 28 }}>
-          Or press <span style={{ color: "var(--fg-mute)" }}>Space</span> · <span style={{ color: "var(--fg-mute)" }}>Enter</span>
+          Or press <span style={{ color: "var(--fg-mute)" }}>Space</span> · <span style={{ color: "var(--fg-mute)" }}>Enter</span> · <span style={{ color: "var(--fg-mute)" }}>Arrow</span>
         </div>
       </div>
     </section>

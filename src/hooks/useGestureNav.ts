@@ -33,6 +33,16 @@ export function isOpenFive(lm: NormalizedLandmark[]): boolean {
   return indexOpen && middleOpen && ringOpen && pinkyOpen && thumbOpen;
 }
 
+export function detectGestureFromHands(hands: NormalizedLandmark[][] | undefined): Gesture | null {
+  if (!hands) return null;
+
+  const validHands = hands.filter((hand) => hand.length >= 21);
+  if (validHands.some(isThumbsUp)) return "next";
+  if (validHands.some(isOpenFive)) return "retry";
+
+  return null;
+}
+
 export function useGestureNav(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   enabled: boolean,
@@ -96,13 +106,7 @@ export function useGestureNav(
         ctx.restore();
 
         const result = landmarker.detect(canvas);
-        const landmarks = result.landmarks?.[0];
-        let candidate: Gesture | null = null;
-
-        if (landmarks?.length >= 21) {
-          if (isThumbsUp(landmarks)) candidate = "next";
-          else if (isOpenFive(landmarks)) candidate = "retry";
-        }
+        const candidate = detectGestureFromHands(result.landmarks);
 
         if (candidate !== currentGestureRef.current) {
           resetDwell(candidate, now);

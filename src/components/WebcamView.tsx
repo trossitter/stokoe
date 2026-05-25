@@ -319,7 +319,7 @@ export function WebcamView({
         autoPlay
         playsInline
         muted
-        className={`w-full h-full object-cover transition-opacity duration-300 ${hidden ? "opacity-0" : "opacity-100"}`}
+        className={`w-full h-full object-contain transition-opacity duration-300 ${hidden ? "opacity-0" : "opacity-100"}`}
         style={{
           transform: "scaleX(-1)",
           filter: "saturate(0.82) contrast(0.92) brightness(0.9)",

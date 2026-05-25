@@ -62,13 +62,14 @@ export function Onboarding({ onComplete }: Props) {
   }, [stream]);
 
   const handleBegin = useCallback(() => {
+    if (exiting) return;
     setExiting(true);
     setTimeout(() => setHandoff(true), 600);
     setTimeout(() => {
       stream?.getTracks().forEach((t) => t.stop());
       onComplete();
     }, 1800);
-  }, [stream, onComplete]);
+  }, [exiting, stream, onComplete]);
 
   const gatedSetIndex = useCallback((updater: (i: number) => number) => {
     setIndex((current) => Math.max(0, Math.min(COUNT - 1, updater(current))));
@@ -85,13 +86,22 @@ export function Onboarding({ onComplete }: Props) {
 
   const carouselLocked = index === COUNT - 1;
   const canBack = index > 0 && !exiting;
-  const canFwd = index < COUNT - 1 && !exiting;
+  const canFwd = !exiting;
+  const isFinalPanel = index === COUNT - 1;
 
-  const hintText = index === COUNT - 1
-    ? "Drag the knob to begin"
+  const hintText = isFinalPanel
+    ? "Drag · slide · arrow → · Space"
     : stream
     ? "← swipe your hand · drag · arrows →"
     : "Drag · arrows →";
+
+  const handleForward = useCallback(() => {
+    if (isFinalPanel) {
+      handleBegin();
+      return;
+    }
+    gatedSetIndex((i) => i + 1);
+  }, [gatedSetIndex, handleBegin, isFinalPanel]);
 
   const pips = Array.from({ length: COUNT }, (_, i) => (
     <span key={i} className={`ob-pip${i === index ? " on" : ""}`} />
@@ -163,8 +173,8 @@ export function Onboarding({ onComplete }: Props) {
             className="ob-navbtn"
             data-no-drag
             disabled={!canFwd}
-            onClick={() => gatedSetIndex((i) => i + 1)}
-            aria-label="Next"
+            onClick={handleForward}
+            aria-label={isFinalPanel ? "Begin" : "Next"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 12 L19 12 M13 6 L19 12 L13 18" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" />
