@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
 import { VOCAB } from "./data/vocab";
-import { SIGN_VIDEOS } from "./data/videos";
 import { classifyAttempt } from "./model/signClassifier";
 import type { HintKey } from "./model/signClassifier";
 import { getProfile, saveProfile, markTutorialDone, getProgress, recordAttempt } from "./store/progress";
@@ -52,10 +51,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
   const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? "app" : "login");
-  // Only queue signs that have a reference video — prevents the "no video" placeholder
-  // showing on every other card. Expand back to full VOCAB once all videos are sourced.
-  const ACTIVE_VOCAB = VOCAB.filter(v => SIGN_VIDEOS[v.id]);
-  const [order] = useState<number[]>(() => shuffle(ACTIVE_VOCAB.map((_, i) => i)));
+  const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [passed, setPassed] = useState<boolean | null>(null);
@@ -72,7 +68,7 @@ export default function App() {
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
 
-  const item = ACTIVE_VOCAB[order[vocabIndex % ACTIVE_VOCAB.length]];
+  const item = VOCAB[order[vocabIndex % VOCAB.length]];
 
   const handleLogin = (name: string, powerUser: boolean) => {
     const saved = saveProfile(name, powerUser);
@@ -235,8 +231,8 @@ export default function App() {
               onNext={handleNext}
               onRetry={handleRetry}
               passed={passed}
-              vocabIndex={vocabIndex % ACTIVE_VOCAB.length}
-              vocabTotal={ACTIVE_VOCAB.length}
+              vocabIndex={vocabIndex % VOCAB.length}
+              vocabTotal={VOCAB.length}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
             <div className={`flex-1 grid gap-3 min-h-0 ${!videoHidden ? "grid-cols-2" : "grid-cols-1"}`}>
