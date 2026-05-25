@@ -5,10 +5,11 @@ const SPEED_STEPS = [0.25, 0.5, 0.75, 1.0];
 type Props = {
   url: string;
   paused?: boolean;
+  hidden?: boolean;
   overlay?: ReactNode;
 };
 
-export function RecordingReview({ url, paused: practicePaused = false, overlay }: Props) {
+export function RecordingReview({ url, paused: practicePaused = false, hidden = false, overlay }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1.0);
@@ -45,11 +46,10 @@ export function RecordingReview({ url, paused: practicePaused = false, overlay }
 
   return (
     <section
-      className="flex-1 relative overflow-hidden min-h-0"
+      className="flex-1 relative overflow-hidden min-h-0 rounded-[28px] border border-slate-700/60"
       style={{
         background: "oklch(0.12 0.02 260)",
-        borderRadius: "50%",
-        clipPath: "circle(50% at 50% 50%)",
+        boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)",
       }}
     >
       <video
@@ -72,9 +72,23 @@ export function RecordingReview({ url, paused: practicePaused = false, overlay }
           height: "100%",
           objectFit: "cover",
           transform: "scaleX(-1)",
+          filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
+          opacity: hidden ? 0 : 1,
+          transition: "opacity 300ms ease",
         }}
       />
 
+      {hidden && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80 px-6 text-center">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Self-view hidden</p>
+        </div>
+      )}
+
+      {!hidden && (
+        <div className="absolute inset-0 pointer-events-none bg-slate-950/10" />
+      )}
+
+      {!hidden && (
       <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-md border border-white/10 bg-black/50 px-2 py-1 text-white backdrop-blur">
         <button
           onClick={handlePlayPause}
@@ -106,7 +120,9 @@ export function RecordingReview({ url, paused: practicePaused = false, overlay }
           {speed}×
         </span>
       </div>
+      )}
 
+      {!hidden && (
       <span
         className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap"
         style={{
@@ -119,6 +135,7 @@ export function RecordingReview({ url, paused: practicePaused = false, overlay }
       >
         Your attempt
       </span>
+      )}
       {overlay}
     </section>
   );

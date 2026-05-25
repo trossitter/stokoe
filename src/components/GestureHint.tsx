@@ -3,9 +3,6 @@ type Props = {
   dwellProgress: number;
 };
 
-const ARC_R = 46;
-const CIRCUMFERENCE = 2 * Math.PI * ARC_R;
-
 const chipBase: React.CSSProperties = {
   background: "rgba(0,0,0,0.5)",
   borderRadius: 20,
@@ -27,38 +24,35 @@ const chipActive: React.CSSProperties = {
 };
 
 export function GestureHint({ gesture, dwellProgress }: Props) {
-  const dashOffset = CIRCUMFERENCE * (1 - dwellProgress);
-
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
-      {/* Dwell arc — covers the whole container */}
+      {/* Dwell cue — top edge, clear of playback controls and result feedback. */}
       {dwellProgress > 0 && (
-        <svg
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: "oklch(0.94 0.042 85 / 0.16)",
+          }}
         >
-          <circle
-            cx="50%"
-            cy="50%"
-            r={ARC_R}
-            fill="none"
-            stroke="oklch(0.94 0.042 85)"
-            strokeWidth="3"
-            strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={dashOffset}
-            strokeLinecap="round"
-            transform="rotate(-90 50 50)"
-            style={{ transition: "stroke-dashoffset 80ms linear" }}
+          <div
+            style={{
+              height: "100%",
+              width: `${Math.max(0, Math.min(1, dwellProgress)) * 100}%`,
+              background: "oklch(0.94 0.042 85)",
+              transition: "width 80ms linear",
+            }}
           />
-        </svg>
+        </div>
       )}
 
-      {/* Pill chips at bottom-center */}
       <div
         style={{
           position: "absolute",
-          bottom: 18,
+          top: 14,
           left: 0,
           right: 0,
           display: "flex",

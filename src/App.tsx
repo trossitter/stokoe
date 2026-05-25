@@ -154,6 +154,7 @@ export default function App() {
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
   const [videoHidden, setVideoHidden] = useState(false);
+  const [userVideoHidden, setUserVideoHidden] = useState(false);
   const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
   const [practicePaused, setPracticePaused] = useState(true);
   const [practiceStarted, setPracticeStarted] = useState(false);
@@ -441,7 +442,7 @@ export default function App() {
               paused={practicePaused}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
-            <div className="relative flex-1 grid gap-3 min-h-0 grid-cols-2">
+            <div className="relative flex-1 grid gap-3 min-h-0 grid-cols-[minmax(132px,0.78fr)_minmax(0,1fr)]">
               <PromptFocusOverlay
                 item={item}
                 vocabIndex={vocabIndex % activeOrder.length}
@@ -451,12 +452,12 @@ export default function App() {
                 sessionState={displayState}
                 onStart={handlePracticePauseToggle}
               />
-              <div className="relative flex min-h-0">
+              <div className="flex min-h-0 flex-col gap-2">
+                <div className="relative flex min-h-0 flex-1">
                 <div className={`flex min-h-0 flex-1 ${reviewVisible ? "pointer-events-none opacity-0" : ""}`}>
                   {showTutorial ? (
                     <section
-                      className="flex-1 bg-slate-900/60 overflow-hidden relative min-h-0"
-                      style={{ clipPath: "circle(50% at 50% 50%)", borderRadius: "50%" }}
+                      className="flex-1 rounded-2xl bg-slate-900/60 overflow-hidden relative min-h-0"
                     />
                   ) : (
                     <WebcamView
@@ -464,6 +465,7 @@ export default function App() {
                       sessionState={displayState}
                       paused={practicePaused}
                       cameraEnabled={practiceStarted}
+                      hidden={userVideoHidden}
                       recordRequestId={recordRequestId}
                       onFramesReady={handleFramesReady}
                       onRecordingReady={handleRecordingReady}
@@ -484,9 +486,21 @@ export default function App() {
                 </div>
                 {reviewVisible && lastRecordingUrl && (
                   <div className="absolute inset-0 flex">
-                    <RecordingReview url={lastRecordingUrl} paused={practicePaused} overlay={gestureHint} />
+                    <RecordingReview
+                      url={lastRecordingUrl}
+                      paused={practicePaused}
+                      hidden={userVideoHidden}
+                      overlay={gestureHint}
+                    />
                   </div>
                 )}
+                </div>
+                <button
+                  onClick={() => setUserVideoHidden((hidden) => !hidden)}
+                  className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 whitespace-nowrap"
+                >
+                  {userVideoHidden ? "Show self-view" : "Hide self-view"}
+                </button>
               </div>
               <SignVideo
                 item={item}

@@ -11,6 +11,7 @@ type Props = {
   sessionState: "idle" | "recording" | "evaluating" | "result";
   paused?: boolean;
   cameraEnabled?: boolean;
+  hidden?: boolean;
   recordRequestId?: number;
   onFramesReady: (frames: ImageData[]) => void;
   onRecordingReady: (url: string) => void;
@@ -19,11 +20,33 @@ type Props = {
 
 type RecordingCueState = "idle" | "countdown" | "recording";
 
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
 export function WebcamView({
   videoRef,
   sessionState,
   paused = false,
   cameraEnabled = true,
+  hidden = false,
   recordRequestId = 0,
   onFramesReady,
   onRecordingReady,
@@ -194,29 +217,34 @@ export function WebcamView({
       const rw = ROI.w * w;
       const rh = ROI.h * h;
 
-      // Circular guide — centre of the ROI rect, radius = half the shorter side
-      const cx = rx + rw / 2;
-      const cy = ry + rh / 2;
-      const cr = Math.min(rw, rh) * 0.48;
-
       const borderColor = paused ? "rgba(148,163,184,0.45)"
                         : recordingCueState === "recording" ? "#ef4444"
                         : recordingCueState === "countdown" ? "#f59e0b"
-                        : "rgba(255,255,255,0.35)";
+                        : "rgba(255,255,255,0.22)";
 
       ctx.strokeStyle = borderColor;
       ctx.lineWidth = recordingCueState === "recording" ? 3 : 2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      drawRoundedRect(ctx, rx, ry, rw, rh, 24);
       ctx.stroke();
 
-      // Countdown arc — sweeps clockwise before explicit recording begins
+      // Countdown cue — a quiet line so the learner is not looking through a ring.
       if (recordingCueState === "countdown" && countdown > 0) {
-        ctx.strokeStyle = "rgba(245, 158, 11, 0.82)";
+        const progressX = rx + 18;
+        const progressY = ry + rh - 16;
+        const progressW = rw - 36;
         ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "rgba(245,158,11,0.22)";
         ctx.beginPath();
-        ctx.arc(cx, cy, cr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * countdown);
+        ctx.moveTo(progressX, progressY);
+        ctx.lineTo(progressX + progressW, progressY);
         ctx.stroke();
+        ctx.strokeStyle = "rgba(245,158,11,0.9)";
+        ctx.beginPath();
+        ctx.moveTo(progressX, progressY);
+        ctx.lineTo(progressX + progressW * countdown, progressY);
+        ctx.stroke();
+        ctx.lineCap = "butt";
       }
 
       // State label
@@ -230,25 +258,21 @@ export function WebcamView({
         ctx.fillText("REC", rx + rw - 50, ry + 19);
       }
 
-      // Guide instruction — centred inside/below the circle
-      const labelY = cy + cr + 20;
+      // Guide instruction — keep this sparse; the primary prompt lives in the center card.
+      const labelY = Math.min(h - 14, ry + rh - 14);
       ctx.textAlign = "center";
       if (paused && camState === "active") {
         ctx.fillStyle = "rgba(255,255,255,0.68)";
         ctx.font = "12px system-ui";
-        ctx.fillText("Paused", cx, labelY);
-      } else if (recordingCueState === "idle" && camState === "active") {
-        ctx.fillStyle = "rgba(255,255,255,0.55)";
-        ctx.font = "12px system-ui";
-        ctx.fillText("Press Record attempt when ready", cx, labelY);
+        ctx.fillText("Paused", rx + rw / 2, labelY);
       } else if (recordingCueState === "countdown") {
         ctx.fillStyle = "rgba(245,158,11,0.9)";
         ctx.font = "12px system-ui";
-        ctx.fillText("Get ready…", cx, labelY);
+        ctx.fillText("Get ready", rx + rw / 2, labelY);
       } else if (recordingCueState === "recording") {
         ctx.fillStyle = "rgba(239,68,68,0.8)";
         ctx.font = "12px system-ui";
-        ctx.fillText("Sign now", cx, labelY);
+        ctx.fillText("Sign now", rx + rw / 2, labelY);
       }
       ctx.textAlign = "left";
 
@@ -259,14 +283,10 @@ export function WebcamView({
     return () => cancelAnimationFrame(rafRef.current);
   }, [camState, recordingCueState, countdown, paused]);
 
-  // Iris: open circle when active, closes to smaller circle during result review
-  const shutterOpen = sessionState !== "result";
-  const clipPath = shutterOpen ? "circle(50% at 50% 50%)" : "circle(34% at 50% 50%)";
-
   return (
     <section
-      className="flex-1 bg-slate-900 overflow-hidden relative min-h-0"
-      style={{ clipPath, transition: "clip-path 0.45s cubic-bezier(0.4, 0, 0.2, 1)", borderRadius: "50%" }}
+      className="flex-1 overflow-hidden relative min-h-0 rounded-[28px] border border-slate-700/60"
+      style={{ background: "oklch(0.12 0.02 260)", boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
     >
       {camState === "denied" && (
         <div className="absolute inset-0 flex items-center justify-center text-center px-6">
@@ -299,10 +319,26 @@ export function WebcamView({
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover"
-        style={{ transform: "scaleX(-1)" }}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${hidden ? "opacity-0" : "opacity-100"}`}
+        style={{
+          transform: "scaleX(-1)",
+          filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
+        }}
       />
-      <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+      {hidden && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80 px-6 text-center">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Self-view hidden</p>
+        </div>
+      )}
+      {!hidden && (
+        <div className="absolute inset-0 pointer-events-none bg-slate-950/10" />
+      )}
+      <canvas
+        ref={overlayRef}
+        className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${
+          hidden ? "opacity-0" : "opacity-100"
+        }`}
+      />
       {overlay}
     </section>
   );
