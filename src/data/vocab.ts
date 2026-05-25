@@ -5,9 +5,21 @@ export type StokoeParams = {
   orientation: string;
 };
 
+export type VocabCategory =
+  | "Actions"
+  | "Colors"
+  | "Essentials"
+  | "Everyday"
+  | "Family"
+  | "Feelings"
+  | "Greetings"
+  | "Numbers"
+  | "Questions";
+
 export type VocabItem = {
   id: string;
   word: string;
+  category: VocabCategory;
   params: StokoeParams;
   hints: StokoeParams & { framing: string };
 };
@@ -17,6 +29,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "hello",
     word: "HELLO",
+    category: "Greetings",
     params: {
       handshape: "Open-5 (all fingers extended, spread)",
       movement: "Single outward brush from temple",
@@ -34,6 +47,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "goodbye",
     word: "GOODBYE",
+    category: "Greetings",
     params: {
       handshape: "Open-5 (fingers extended)",
       movement: "Fingers fold down and open repeatedly (wave)",
@@ -51,6 +65,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "please",
     word: "PLEASE",
+    category: "Greetings",
     params: {
       handshape: "Flat-B (fingers together, extended)",
       movement: "Circular motion on chest",
@@ -68,6 +83,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "thank-you",
     word: "THANK YOU",
+    category: "Essentials",
     params: {
       handshape: "Flat-B (fingers together)",
       movement: "Touch chin, move outward and slightly down",
@@ -85,6 +101,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "sorry",
     word: "SORRY",
+    category: "Greetings",
     params: {
       handshape: "S-hand (closed fist, thumb alongside fingers)",
       movement: "Circular motion on chest",
@@ -102,6 +119,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "tired",
     word: "TIRED",
+    category: "Feelings",
     params: {
       handshape: "Bent-5 (both hands, fingers bent, fingertips touching chest)",
       movement: "Elbows drop, hands rotate downward as if wilting",
@@ -119,6 +137,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "yes",
     word: "YES",
+    category: "Essentials",
     params: {
       handshape: "S-hand (closed fist)",
       movement: "Nod fist up and down (twice)",
@@ -136,6 +155,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "no",
     word: "NO",
+    category: "Essentials",
     params: {
       handshape: "Index and middle fingers extended (U-hand)",
       movement: "Fingers snap closed to thumb twice",
@@ -151,8 +171,27 @@ export const VOCAB: VocabItem[] = [
     },
   },
   {
+    id: "bathroom",
+    word: "BATHROOM",
+    category: "Essentials",
+    params: {
+      handshape: "T (thumb between index and middle)",
+      movement: "Side-to-side shake",
+      location: "Neutral space, chest height",
+      orientation: "Palm facing out",
+    },
+    hints: {
+      handshape: "Make a T handshape: tuck your thumb between your index and middle fingers.",
+      movement: "Shake the hand side to side with a small, clear motion.",
+      location: "Hold the sign in neutral space at chest height.",
+      orientation: "Keep your palm facing outward as the hand shakes.",
+      framing: "Keep the full side-to-side shake inside the guide box.",
+    },
+  },
+  {
     id: "good",
     word: "GOOD",
+    category: "Feelings",
     params: {
       handshape: "Flat-B (fingers together)",
       movement: "Touch chin, arc forward and land on flat left palm",
@@ -170,6 +209,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "bad",
     word: "BAD",
+    category: "Feelings",
     params: {
       handshape: "Flat-B (fingers together)",
       movement: "Touch chin, flip hand outward and down (palm turns down)",
@@ -189,6 +229,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "one",
     word: "ONE",
+    category: "Numbers",
     params: {
       handshape: "Index finger extended (1-hand), others tucked",
       movement: "Static hold",
@@ -206,6 +247,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "two",
     word: "TWO",
+    category: "Numbers",
     params: {
       handshape: "Index and middle fingers extended (V-hand / 2-hand)",
       movement: "Static hold",
@@ -223,6 +265,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "three",
     word: "THREE",
+    category: "Numbers",
     params: {
       handshape: "Thumb, index, middle extended (3-hand)",
       movement: "Static hold",
@@ -240,6 +283,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "four",
     word: "FOUR",
+    category: "Numbers",
     params: {
       handshape: "Four fingers extended, thumb tucked (4-hand)",
       movement: "Static hold",
@@ -257,6 +301,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "stop",
     word: "STOP",
+    category: "Actions",
     params: {
       handshape: "Dominant flat-B chops onto non-dominant flat-B palm",
       movement: "Single downward chop onto stationary palm",
@@ -274,6 +319,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "six",
     word: "SIX",
+    category: "Numbers",
     params: {
       handshape: "Pinky and thumb touching, other three extended (6-hand)",
       movement: "Static hold",
@@ -291,6 +337,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "seven",
     word: "SEVEN",
+    category: "Numbers",
     params: {
       handshape: "Ring finger and thumb touching, others extended (7-hand)",
       movement: "Static hold",
@@ -308,6 +355,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "eight",
     word: "EIGHT",
+    category: "Numbers",
     params: {
       handshape: "Middle finger and thumb touching, others extended (8-hand)",
       movement: "Static hold",
@@ -325,6 +373,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "nine",
     word: "NINE",
+    category: "Numbers",
     params: {
       handshape: "Index finger and thumb touching (F/O-hand for 9), others extended",
       movement: "Static hold",
@@ -342,6 +391,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "happy",
     word: "HAPPY",
+    category: "Feelings",
     params: {
       handshape: "Flat-B (fingers together)",
       movement: "Two upward brushing strokes on chest",
@@ -361,6 +411,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "red",
     word: "RED",
+    category: "Colors",
     params: {
       handshape: "1-hand (index extended), then brushes down lip",
       movement: "Index finger brushes down across lips twice",
@@ -378,6 +429,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "blue",
     word: "BLUE",
+    category: "Colors",
     params: {
       handshape: "B-hand (fingers together, extended, thumb tucked)",
       movement: "Twist/shake wrist side to side",
@@ -395,6 +447,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "green",
     word: "GREEN",
+    category: "Colors",
     params: {
       handshape: "G-hand (index and thumb extended, parallel)",
       movement: "Shake/twist wrist side to side",
@@ -412,6 +465,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "yellow",
     word: "YELLOW",
+    category: "Colors",
     params: {
       handshape: "Y-hand (thumb and pinky extended)",
       movement: "Shake/twist wrist side to side",
@@ -429,6 +483,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "orange",
     word: "ORANGE",
+    category: "Colors",
     params: {
       handshape: "C-hand (curved, like holding a ball)",
       movement: "Open and close hand repeatedly near chin (squeezing motion)",
@@ -446,6 +501,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "purple",
     word: "PURPLE",
+    category: "Colors",
     params: {
       handshape: "P-hand (middle finger bent down, index and thumb extended)",
       movement: "Shake/twist wrist side to side",
@@ -463,6 +519,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "black",
     word: "BLACK",
+    category: "Colors",
     params: {
       handshape: "1-hand (index extended)",
       movement: "Index finger brushes across forehead from center outward",
@@ -480,6 +537,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "white",
     word: "WHITE",
+    category: "Colors",
     params: {
       handshape: "Open-5 on chest, close to flat-O as hand pulls away",
       movement: "Hand pulls away from chest while fingers close",
@@ -499,6 +557,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "mother",
     word: "MOTHER",
+    category: "Family",
     params: {
       handshape: "Open-5 (all fingers spread), thumb extended",
       movement: "Thumb taps chin twice",
@@ -516,6 +575,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "father",
     word: "FATHER",
+    category: "Family",
     params: {
       handshape: "Open-5 (all fingers spread), thumb extended",
       movement: "Thumb taps forehead twice",
@@ -533,6 +593,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "sister",
     word: "SISTER",
+    category: "Family",
     params: {
       handshape: "L-hand (index and thumb extended at 90°), starting at chin",
       movement: "Moves from chin down to land on other L-hand",
@@ -550,6 +611,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "brother",
     word: "BROTHER",
+    category: "Family",
     params: {
       handshape: "L-hand starting at forehead",
       movement: "Moves from forehead down to land on other L-hand",
@@ -567,6 +629,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "baby",
     word: "BABY",
+    category: "Family",
     params: {
       handshape: "Both arms crossed, cradling position",
       movement: "Rock arms side to side (cradling a baby)",
@@ -584,6 +647,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "family",
     word: "FAMILY",
+    category: "Family",
     params: {
       handshape: "Both F-hands (index and thumb touching, other fingers extended)",
       movement: "Hands start touching thumbs, arc outward and around until pinkies touch",
@@ -603,6 +667,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "eat",
     word: "EAT",
+    category: "Actions",
     params: {
       handshape: "Flat-O (fingers bunched together, touching thumb)",
       movement: "Taps mouth twice",
@@ -620,6 +685,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "drink",
     word: "DRINK",
+    category: "Actions",
     params: {
       handshape: "C-hand (curved, like holding a cup)",
       movement: "Tips toward mouth as if drinking",
@@ -637,6 +703,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "want",
     word: "WANT",
+    category: "Feelings",
     params: {
       handshape: "Both open-5 hands, bent/clawed (5-hand with curved fingers)",
       movement: "Pull both hands toward body while fingers curl inward",
@@ -654,6 +721,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "like",
     word: "LIKE",
+    category: "Feelings",
     params: {
       handshape: "Open-5 on chest, middle finger and thumb pinch as hand moves out",
       movement: "Middle finger and thumb pull away from chest pinching together",
@@ -671,6 +739,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "love",
     word: "LOVE",
+    category: "Feelings",
     params: {
       handshape: "Both arms crossed over chest (fists or flat hands)",
       movement: "Static or slight press into chest",
@@ -688,6 +757,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "help",
     word: "HELP",
+    category: "Actions",
     params: {
       handshape: "A-hand (fist) on flat B palm (other hand)",
       movement: "Flat B palm lifts the A-hand fist upward",
@@ -705,6 +775,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "know",
     word: "KNOW",
+    category: "Actions",
     params: {
       handshape: "Flat-B or bent hand",
       movement: "Fingertips tap temple/side of head twice",
@@ -722,6 +793,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "understand",
     word: "UNDERSTAND",
+    category: "Actions",
     params: {
       handshape: "S-hand (fist) near temple, index flicks up (X/1 transition)",
       movement: "Index finger flicks upward from fist at temple",
@@ -739,6 +811,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "go",
     word: "GO",
+    category: "Actions",
     params: {
       handshape: "Both 1-hands (index fingers extended)",
       movement: "Both index fingers arc from pointing toward body to pointing away",
@@ -756,6 +829,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "come",
     word: "COME",
+    category: "Actions",
     params: {
       handshape: "Both 1-hands (index fingers extended)",
       movement: "Both index fingers arc from pointing away to pointing toward body",
@@ -773,6 +847,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "see",
     word: "SEE",
+    category: "Actions",
     params: {
       handshape: "V-hand (index and middle extended)",
       movement: "V-hand moves from near eyes forward",
@@ -790,6 +865,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "learn",
     word: "LEARN",
+    category: "Actions",
     params: {
       handshape: "Flat-O (fingers bunched) touches flat palm, then moves to forehead closing",
       movement: "Picks from flat palm and brings to forehead, closing to flat-O",
@@ -807,6 +883,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "sleep",
     word: "SLEEP",
+    category: "Actions",
     params: {
       handshape: "Open-5, fingers spread",
       movement: "Hand draws down over face as fingers close",
@@ -826,6 +903,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "i-me",
     word: "I / ME",
+    category: "Essentials",
     params: {
       handshape: "1-hand or flat hand pointing",
       movement: "Index finger or flat hand points to own chest",
@@ -843,6 +921,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "you",
     word: "YOU",
+    category: "Essentials",
     params: {
       handshape: "1-hand (index finger extended)",
       movement: "Point forward (toward the person being addressed)",
@@ -862,6 +941,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "water",
     word: "WATER",
+    category: "Everyday",
     params: {
       handshape: "W-hand (index, middle, ring extended) taps chin",
       movement: "Taps chin twice",
@@ -879,6 +959,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "home",
     word: "HOME",
+    category: "Everyday",
     params: {
       handshape: "Flat-O (fingers bunched)",
       movement: "Taps cheek near mouth, then near ear",
@@ -896,6 +977,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "school",
     word: "SCHOOL",
+    category: "Everyday",
     params: {
       handshape: "Flat-B dominant hand claps on flat-B non-dominant hand",
       movement: "Dominant hand claps non-dominant twice",
@@ -913,6 +995,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "book",
     word: "BOOK",
+    category: "Everyday",
     params: {
       handshape: "Both flat-B hands, palms together",
       movement: "Hands open like a book (rotate apart at heel)",
@@ -930,6 +1013,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "name",
     word: "NAME",
+    category: "Everyday",
     params: {
       handshape: "Both H-hands (index and middle extended, parallel, horizontal)",
       movement: "Dominant H crosses over non-dominant H at middle joints",
@@ -949,6 +1033,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "what",
     word: "WHAT",
+    category: "Questions",
     params: {
       handshape: "Open-5 or flat hands, slightly bent",
       movement: "Hands shake side to side (or index brushes across fingers of other hand)",
@@ -966,6 +1051,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "where",
     word: "WHERE",
+    category: "Essentials",
     params: {
       handshape: "1-hand (index extended)",
       movement: "Index wags side to side",
@@ -983,6 +1069,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "who",
     word: "WHO",
+    category: "Questions",
     params: {
       handshape: "L-hand (index and thumb extended), index traces lip circle",
       movement: "Index finger traces circle around lips",
@@ -1000,6 +1087,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "how",
     word: "HOW",
+    category: "Questions",
     params: {
       handshape: "Both bent hands (knuckles facing each other)",
       movement: "Hands rotate upward, knuckles brushing as they open",
@@ -1017,6 +1105,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "why",
     word: "WHY",
+    category: "Questions",
     params: {
       handshape: "Bent hand at forehead, middle finger extends as hand moves out",
       movement: "Fingers touch forehead then move out with middle finger extended",
@@ -1036,6 +1125,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "big",
     word: "BIG",
+    category: "Everyday",
     params: {
       handshape: "Both L-hands (index and thumb extended)",
       movement: "Hands move apart to show large size",
@@ -1053,6 +1143,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "small",
     word: "SMALL",
+    category: "Everyday",
     params: {
       handshape: "Both flat-B hands",
       movement: "Hands come close together (showing small size)",
@@ -1070,6 +1161,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "hot",
     word: "HOT",
+    category: "Everyday",
     params: {
       handshape: "Bent-5 (curved claw) in front of mouth",
       movement: "Hand twists outward from mouth, like throwing away hot food",
@@ -1087,6 +1179,7 @@ export const VOCAB: VocabItem[] = [
   {
     id: "cold",
     word: "COLD",
+    category: "Everyday",
     params: {
       handshape: "Both S-hands (fists)",
       movement: "Fists shake near shoulders (shivering motion)",

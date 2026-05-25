@@ -8,6 +8,7 @@ export const SIGN_VIDEOS: Record<string, string | null> = {
   tired:     "/signs/tired.mp4",
   yes:       "/signs/yes.mp4",
   no:        "/signs/no.mp4",
+  bathroom:  "/signs/bathroom.mp4",
   good:      "/signs/good.mp4",
   bad:       "/signs/bad.mp4",
   one:       "/signs/one.mp4",
