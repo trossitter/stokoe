@@ -122,8 +122,16 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, overlay }: P
     return () => cancelAnimationFrame(rafRef.current);
   }, [camState, triggerState, countdown]);
 
+  // Shutter: iris to a circle during result review, open fully when active.
+  // 60% keeps the bottom-edge CameraHint readable; open uses a generous value to show full rectangle.
+  const shutterOpen = sessionState !== "result";
+  const clipPath = shutterOpen ? "circle(200% at 50% 50%)" : "circle(60% at 50% 50%)";
+
   return (
-    <section className="flex-1 bg-slate-900 rounded-2xl overflow-hidden relative min-h-0">
+    <section
+      className="flex-1 bg-slate-900 rounded-2xl overflow-hidden relative min-h-0"
+      style={{ clipPath, transition: "clip-path 0.45s cubic-bezier(0.4, 0, 0.2, 1)" }}
+    >
       {camState === "denied" && (
         <div className="absolute inset-0 flex items-center justify-center text-center px-6">
           <div>
