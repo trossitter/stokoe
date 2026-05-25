@@ -8,6 +8,7 @@ import type { Progress, UserProfile } from "./store/progress";
 import { WebcamView } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
+import { SignVideo } from "./components/SignVideo";
 import { LoginScreen } from "./components/LoginScreen";
 import { WelcomeSplash } from "./components/WelcomeSplash";
 import { Onboarding } from "./components/onboarding/Onboarding";
@@ -57,6 +58,7 @@ export default function App() {
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
+  const [videoHidden, setVideoHidden] = useState(false);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => new URLSearchParams(location.search).has("onboarding")
   );
@@ -183,6 +185,13 @@ export default function App() {
           <span className="text-xs text-slate-400">ASL 1 practice</span>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setVideoHidden((h) => !h)}
+            className="text-xs text-slate-400 hover:text-slate-600 transition-colors px-2 py-1 rounded-md hover:bg-slate-100"
+          >
+            {videoHidden ? "Show ref" : "Hide ref"}
+          </button>
+          <span className="text-xs text-slate-300">·</span>
           <span className="text-xs text-slate-500">{profile.name}</span>
           <span className="text-xs text-slate-300">·</span>
           <span className="text-xs text-slate-400">
@@ -216,14 +225,19 @@ export default function App() {
             }
           />
         </div>
-        <FeedbackPanel
-          item={item}
-          sessionState={displayState}
-          passed={passed}
-          hintKey={hintKey}
-          confidence={confidence}
-          progress={progress}
-        />
+        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
+          {!videoHidden && (
+            <SignVideo item={item} hidden={false} />
+          )}
+          <FeedbackPanel
+            item={item}
+            sessionState={displayState}
+            passed={passed}
+            hintKey={hintKey}
+            confidence={confidence}
+            progress={progress}
+          />
+        </div>
       </main>
 
       {showTutorial && <Onboarding onComplete={handleTutorialComplete} />}
