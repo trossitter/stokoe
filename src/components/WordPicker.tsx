@@ -1,39 +1,137 @@
-import { useMemo, useState } from "react";
-import type { VocabItem } from "../data/vocab";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { VocabCategory, VocabItem } from "../data/vocab";
 
 const LESSON_SIZE = 10;
-const NUMBER_SIGN_IDS = new Set(["one", "two", "three", "four", "six", "seven", "eight", "nine"]);
+const CATEGORY_ORDER: VocabCategory[] = [
+  "Essentials",
+  "Actions",
+  "Colors",
+  "Everyday",
+  "Family",
+  "Feelings",
+  "Greetings",
+  "Questions",
+  "Numbers",
+];
 
 type Props = {
   vocab: VocabItem[];
   onStart: (indices: number[]) => void;
-  onDecideForMe: () => void;
 };
 
-export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
-  const [showSetup, setShowSetup] = useState(true);
+type IndexedVocabItem = {
+  item: VocabItem;
+  index: number;
+};
+
+function shuffle<T>(items: T[]): T[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function compareCategory(a: VocabCategory, b: VocabCategory): number {
+  return CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b);
+}
+
+function groupByCategory(entries: IndexedVocabItem[]): Array<[VocabCategory, IndexedVocabItem[]]> {
+  const groups = new Map<VocabCategory, IndexedVocabItem[]>();
+  for (const entry of entries) {
+    const group = groups.get(entry.item.category) ?? [];
+    group.push(entry);
+    groups.set(entry.item.category, group);
+  }
+  return Array.from(groups.entries()).sort(([a], [b]) => compareCategory(a, b));
+}
+
+function sortByCategory(entries: IndexedVocabItem[]): IndexedVocabItem[] {
+  return [...entries].sort((a, b) => compareCategory(a.item.category, b.item.category) || a.index - b.index);
+}
+
+function buildBalancedLessonIndices(vocab: VocabItem[]): number[] {
+  const entries = vocab.map((item, index) => ({ item, index }));
+  const groups = groupByCategory(entries).filter(([category]) => category !== "Numbers");
+  const picked: number[] = [];
+  const remainingByCategory = new Map<VocabCategory, IndexedVocabItem[]>();
+
+  for (const [category, categoryEntries] of groups) {
+    const shuffledEntries = shuffle(categoryEntries);
+    const first = shuffledEntries.shift();
+    if (first) {
+      picked.push(first.index);
+    }
+    remainingByCategory.set(category, shuffledEntries);
+  }
+
+  while (picked.length < LESSON_SIZE) {
+    let added = false;
+    for (const [category] of shuffle(groups)) {
+      const remaining = remainingByCategory.get(category) ?? [];
+      const next = remaining.shift();
+      if (!next) continue;
+      picked.push(next.index);
+      added = true;
+      if (picked.length >= LESSON_SIZE) break;
+    }
+    if (!added) break;
+  }
+
+  return shuffle(picked).slice(0, LESSON_SIZE);
+}
+
+export function WordPicker({ vocab, onStart }: Props) {
+  const [showSetup, setShowSetup] = useState(false);
+  const [setupVisible, setSetupVisible] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
+  const [activeCategories, setActiveCategories] = useState<VocabCategory[]>([]);
   const selectedSet = useMemo(() => new Set(selected), [selected]);
-  const displayVocab = useMemo(
-    () => vocab
+  const activeCategorySet = useMemo(() => new Set(activeCategories), [activeCategories]);
+  const displayVocab = useMemo(() => {
+    const entries = sortByCategory(vocab.map((item, index) => ({ item, index })));
+    if (activeCategories.length === 0) return entries;
+    return entries.filter(({ item }) => activeCategorySet.has(item.category));
+  }, [activeCategories.length, activeCategorySet, vocab]);
+  const handleDecideForMe = useCallback(() => {
+    onStart(buildBalancedLessonIndices(vocab));
+  }, [onStart, vocab]);
+
+  // Fade the setup modal in on mount
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setShowSetup(true);
+      requestAnimationFrame(() => setSetupVisible(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const toggleCategory = (category: VocabCategory) => {
+    const categoryIndices = vocab
       .map((item, index) => ({ item, index }))
-      .sort((a, b) => {
-        const aIsNumber = NUMBER_SIGN_IDS.has(a.item.id);
-        const bIsNumber = NUMBER_SIGN_IDS.has(b.item.id);
-        if (aIsNumber !== bIsNumber) return aIsNumber ? 1 : -1;
-        return a.index - b.index;
-      }),
-    [vocab],
-  );
+      .filter(({ item }) => item.category === category)
+      .map(({ index }) => index);
+
+    const isActive = activeCategories.includes(category);
+
+    setActiveCategories((current) =>
+      isActive ? current.filter((c) => c !== category) : [...current, category]
+    );
+
+    setSelected((current) => {
+      if (isActive) return current.filter((i) => !categoryIndices.includes(i));
+      const added = categoryIndices.filter((i) => !current.includes(i));
+      return [...current, ...added];
+    });
+  };
 
   const toggle = (index: number) => {
-    setSelected((current) => {
-      if (current.includes(index)) {
-        return current.filter((item) => item !== index);
-      }
-      if (current.length >= LESSON_SIZE) return current;
-      return [...current, index];
-    });
+    setSelected((current) =>
+      current.includes(index)
+        ? current.filter((item) => item !== index)
+        : [...current, index]
+    );
   };
 
   return (
@@ -47,23 +145,17 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="text-xs uppercase tracking-[0.22em] text-slate-500">
-            {vocab.length} total signs
-          </div>
           <h2
-            className="mt-3 text-5xl text-slate-100"
+            className="text-5xl text-slate-100"
             style={{ fontFamily: "'Newsreader', Georgia, serif" }}
           >
-            Choose signs for this session.
+            Choose signs.
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-            Pick up to ten words for the set you are about to practice.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={onDecideForMe}
+            onClick={handleDecideForMe}
             className="rounded-xl border px-4 py-3 text-sm font-medium transition-colors hover:bg-slate-800/70"
             style={{
               borderColor: "oklch(0.36 0.028 260 / 0.8)",
@@ -72,23 +164,12 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
           >
             Decide for Me
           </button>
-          <button
-            onClick={() => selected.length > 0 && onStart(selected)}
-            disabled={selected.length === 0}
-            className="rounded-xl px-4 py-3 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-            style={{
-              background: "oklch(0.94 0.042 85)",
-              color: "oklch(0.18 0.024 260)",
-            }}
-          >
-            {selected.length > 0 ? `Start with ${selected.length}` : "Start selected"}
-          </button>
         </div>
       </div>
 
       <div className="flex items-center justify-between border-y border-slate-700/70 py-3">
         <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
-          {selected.length} / {LESSON_SIZE} selected
+          {selected.length === 0 ? "None selected" : `${selected.length} selected`}
         </span>
         <button
           onClick={() => setSelected([])}
@@ -99,7 +180,31 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="flex flex-wrap gap-2">
+        {CATEGORY_ORDER.map((category) => {
+          const isActive = activeCategorySet.has(category);
+
+          return (
+            <button
+              key={category}
+              type="button"
+              onClick={() => toggleCategory(category)}
+              aria-pressed={isActive}
+              className="rounded-full border px-3 py-2 text-[10px] uppercase tracking-[0.18em] transition-colors"
+              style={{
+                background: isActive ? "oklch(0.94 0.042 85 / 0.14)" : "oklch(0.22 0.028 260 / 0.56)",
+                borderColor: isActive ? "oklch(0.94 0.042 85 / 0.58)" : "oklch(0.36 0.028 260 / 0.7)",
+                color: isActive ? "oklch(0.94 0.042 85)" : "rgb(148 163 184)",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              {category}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={`min-h-0 flex-1 overflow-y-auto pr-1 ${selected.length > 0 ? "pb-24" : ""}`}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {displayVocab.map(({ item, index }) => {
             const isSelected = selectedSet.has(index);
@@ -117,16 +222,41 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
                   color: isSelected ? "oklch(0.97 0.008 85)" : "rgb(203 213 225)",
                 }}
               >
-                <span className="block text-sm font-semibold">{item.word}</span>
+                <span className="block text-sm font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  {item.word}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
+      {selected.length > 0 && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-5 py-4 md:px-8"
+          style={{
+            background: "linear-gradient(to top, oklch(0.18 0.024 260 / 0.96), oklch(0.18 0.024 260 / 0.72), transparent)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => onStart(selected)}
+            className="pointer-events-auto rounded-xl border px-8 py-3 text-sm font-semibold transition-colors hover:brightness-110"
+            style={{
+              background: "oklch(0.94 0.042 85)",
+              borderColor: "oklch(0.94 0.042 85)",
+              color: "oklch(0.18 0.024 260)",
+            }}
+          >
+            {selected.length === 1 ? "Start" : `Start · ${selected.length}`}
+          </button>
+        </div>
+      )}
+
       {showSetup && (
         <div
           className="absolute inset-0 z-20 flex items-center justify-center bg-black/10 p-4 text-left backdrop-blur-[1px]"
+          style={{ opacity: setupVisible ? 1 : 0, transition: "opacity 0.35s ease-out" }}
           onClick={() => setShowSetup(false)}
         >
           <div
@@ -141,24 +271,18 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
             }}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="text-xs uppercase tracking-[0.22em] text-slate-500">
-              Guide your session
-            </div>
             <h3
               id="session-setup-title"
-              className="mt-3 text-4xl text-slate-100"
+              className="text-4xl text-slate-100"
               style={{ fontFamily: "'Newsreader', Georgia, serif" }}
             >
-              Choose what to practice.
+              Choose signs.
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              Pick a ten-sign set automatically, or choose your own signs from the list behind this window.
-            </p>
 
             <div className="mt-6 grid gap-2">
               <button
                 type="button"
-                onClick={onDecideForMe}
+                onClick={handleDecideForMe}
                 className="rounded-xl border px-4 py-3 text-sm font-semibold transition-colors hover:brightness-110"
                 style={{
                   background: "oklch(0.94 0.042 85)",
