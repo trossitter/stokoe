@@ -5,9 +5,18 @@ import { SIGN_VIDEOS } from "../data/videos";
 type Props = {
   item: VocabItem;
   hidden: boolean;
+  recordingUrl: string | null;
+  sessionState: "idle" | "recording" | "evaluating" | "result";
 };
 
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1.0];
+
+type VideoStatus = {
+  itemId: string;
+  paused: boolean;
+  loading: boolean;
+  error: boolean;
+};
 
 function Placeholder({ word, reason }: { word: string; reason: "missing" | "error" }) {
   return (
@@ -34,21 +43,29 @@ function Placeholder({ word, reason }: { word: string; reason: "missing" | "erro
   );
 }
 
-export function SignVideo({ item, hidden }: Props) {
+export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1.0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [videoStatus, setVideoStatus] = useState<VideoStatus>({
+    itemId: item.id,
+    paused: false,
+    loading: true,
+    error: false,
+  });
 
   const videoUrl = SIGN_VIDEOS[item.id];
+  const status = videoStatus.itemId === item.id
+    ? videoStatus
+    : { itemId: item.id, paused: false, loading: true, error: false };
 
-  // Reset error/loading state when the item changes (video remounts via key)
-  useEffect(() => {
-    setError(false);
-    setLoading(true);
-    setPaused(false);
-  }, [item.id]);
+  const updateVideoStatus = (patch: Partial<Omit<VideoStatus, "itemId">>) => {
+    setVideoStatus((prev) => {
+      const base = prev.itemId === item.id
+        ? prev
+        : { itemId: item.id, paused: false, loading: true, error: false };
+      return { ...base, ...patch, itemId: item.id };
+    });
+  };
 
   // Apply playback rate whenever it changes
   useEffect(() => {
@@ -88,13 +105,13 @@ export function SignVideo({ item, hidden }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-slate-400">Reference</span>
-        {videoUrl && !error && (
+        {videoUrl && !status.error && (
           <button
             onClick={handlePlayPause}
             className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors"
-            aria-label={paused ? "Play" : "Pause"}
+            aria-label={status.paused ? "Play" : "Pause"}
           >
-            {paused ? (
+            {status.paused ? (
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M3 2.5l10 5.5-10 5.5V2.5z" />
               </svg>
@@ -110,12 +127,12 @@ export function SignVideo({ item, hidden }: Props) {
       {/* Video area */}
       {!videoUrl ? (
         <Placeholder word={item.word} reason="missing" />
-      ) : error ? (
+      ) : status.error ? (
         <Placeholder word={item.word} reason="error" />
       ) : (
         <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900">
           {/* Loading pulse — shown until canplay fires */}
-          {loading && (
+          {status.loading && (
             <div className="absolute inset-0 bg-slate-800 animate-pulse rounded-xl" />
           )}
           {/*
@@ -131,22 +148,38 @@ export function SignVideo({ item, hidden }: Props) {
             loop
             muted
             playsInline
-            onPlay={() => setPaused(false)}
-            onPause={() => setPaused(true)}
+            onPlay={() => updateVideoStatus({ paused: false })}
+            onPause={() => updateVideoStatus({ paused: true })}
             onCanPlay={() => {
-              setLoading(false);
+              updateVideoStatus({ loading: false });
               if (videoRef.current) {
                 videoRef.current.playbackRate = speed;
               }
             }}
-            onWaiting={() => setLoading(true)}
-            onError={() => { setError(true); setLoading(false); }}
+            onWaiting={() => updateVideoStatus({ loading: true })}
+            onError={() => updateVideoStatus({ error: true, loading: false })}
+          />
+        </div>
+      )}
+
+      {recordingUrl && sessionState === "result" && (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-slate-400">Your attempt</span>
+          <video
+            key={recordingUrl}
+            src={recordingUrl}
+            className="w-full rounded-lg aspect-video object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ transform: "scaleX(-1)" }}
           />
         </div>
       )}
 
       {/* Speed controls — only shown when video is available */}
-      {videoUrl && !error && (
+      {videoUrl && !status.error && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 shrink-0">Speed</span>
           <input

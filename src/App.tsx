@@ -64,6 +64,7 @@ export default function App() {
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
   const [videoHidden, setVideoHidden] = useState(false);
+  const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => new URLSearchParams(location.search).has("onboarding")
   );
@@ -115,6 +116,13 @@ export default function App() {
     },
     [item.id],
   );
+
+  const handleRecordingReady = useCallback((url: string) => {
+    setLastRecordingUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+  }, []);
 
   const handleNext = useCallback(() => {
     setVocabIndex((i) => i + 1);
@@ -236,6 +244,7 @@ export default function App() {
                 videoRef={videoRef}
                 sessionState={showTutorial ? "idle" : displayState}
                 onFramesReady={handleFramesReady}
+                onRecordingReady={handleRecordingReady}
                 overlay={
                   swipeFlash
                     ? <SwipeFlash direction={swipeFlash} />
@@ -244,7 +253,14 @@ export default function App() {
                     : null
                 }
               />
-              {!videoHidden && <SignVideo item={item} hidden={false} />}
+              {!videoHidden && (
+                <SignVideo
+                  item={item}
+                  hidden={false}
+                  recordingUrl={lastRecordingUrl}
+                  sessionState={displayState}
+                />
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
