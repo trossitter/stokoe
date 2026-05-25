@@ -110,7 +110,7 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
                 key={item.id}
                 onClick={() => toggle(index)}
                 disabled={isDisabled}
-                className="min-h-[76px] rounded-xl border px-3 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-35"
+                className="min-h-[64px] rounded-xl border px-3 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-35"
                 style={{
                   background: isSelected ? "oklch(0.94 0.042 85 / 0.14)" : "oklch(0.22 0.028 260 / 0.62)",
                   borderColor: isSelected ? "oklch(0.94 0.042 85 / 0.52)" : "oklch(0.36 0.028 260 / 0.58)",
@@ -118,9 +118,6 @@ export function WordPicker({ vocab, onStart, onDecideForMe }: Props) {
                 }}
               >
                 <span className="block text-sm font-semibold">{item.word}</span>
-                <span className="mt-2 block text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                  {isSelected ? "Selected" : "Choose"}
-                </span>
               </button>
             );
           })}
