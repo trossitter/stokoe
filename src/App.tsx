@@ -60,6 +60,7 @@ function PromptFocusOverlay({
   vocabTotal,
   paused,
   started,
+  sessionState,
   onStart,
 }: {
   item: VocabItem;
@@ -67,12 +68,19 @@ function PromptFocusOverlay({
   vocabTotal: number;
   paused: boolean;
   started: boolean;
+  sessionState: SessionState;
   onStart: () => void;
 }) {
   const notation = NOTATION[item.id];
+  const hiddenWhileSigning = sessionState === "recording" || sessionState === "evaluating";
 
   return (
-    <div className="pointer-events-none absolute inset-x-4 top-1/2 z-30 flex -translate-y-1/2 justify-center">
+    <div
+      className={`pointer-events-none absolute inset-x-4 top-1/2 z-30 flex -translate-y-1/2 justify-center transition-all duration-500 ease-out ${
+        hiddenWhileSigning ? "scale-95 opacity-0" : "scale-100 opacity-100"
+      }`}
+      aria-hidden={hiddenWhileSigning}
+    >
       <div
         className="max-w-[440px] rounded-2xl border px-8 py-5 text-center shadow-2xl"
         style={{
@@ -440,6 +448,7 @@ export default function App() {
                 vocabTotal={activeOrder.length}
                 paused={practicePaused}
                 started={practiceStarted}
+                sessionState={displayState}
                 onStart={handlePracticePauseToggle}
               />
               <div className="relative flex min-h-0">
