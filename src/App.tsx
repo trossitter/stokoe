@@ -15,6 +15,7 @@ import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
 import { MoteField } from "./components/onboarding/MoteField";
 import { ScoringOverlay } from "./components/ScoringOverlay";
+import { RecordingReview } from "./components/RecordingReview";
 
 type SessionState = "idle" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
@@ -281,19 +282,23 @@ export default function App() {
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
             <div className={`flex-1 grid gap-3 min-h-0 ${!videoHidden ? "grid-cols-2" : "grid-cols-1"}`}>
-              <WebcamView
-                videoRef={videoRef}
-                sessionState={showTutorial ? "idle" : displayState}
-                onFramesReady={handleFramesReady}
-                onRecordingReady={handleRecordingReady}
-                overlay={
-                  swipeFlash
-                    ? <SwipeFlash direction={swipeFlash} />
-                    : displayState === "result" && passed !== null
-                    ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-                    : null
-                }
-              />
+              {displayState === "result" && lastRecordingUrl ? (
+                <RecordingReview url={lastRecordingUrl} />
+              ) : (
+                <WebcamView
+                  videoRef={videoRef}
+                  sessionState={showTutorial ? "idle" : displayState}
+                  onFramesReady={handleFramesReady}
+                  onRecordingReady={handleRecordingReady}
+                  overlay={
+                    swipeFlash
+                      ? <SwipeFlash direction={swipeFlash} />
+                      : displayState === "result" && passed !== null
+                      ? <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
+                      : null
+                  }
+                />
+              )}
               {!videoHidden && (
                 <SignVideo
                   item={item}
