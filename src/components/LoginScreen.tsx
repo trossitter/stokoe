@@ -15,7 +15,7 @@ export function LoginScreen({ onLogin, exiting }: Props) {
     <div className={`ls-root${exiting ? " ls-exit" : ""}`}>
       <div className="ls-card">
         <div className="ls-brand">
-          <img src="/logo.webp" alt="" className="ls-logo" />
+          <img src="/logo.svg" alt="" className="ls-logo" />
           <div className="ls-brand-text">
             <h1>Stokoe</h1>
             <p>ASL vocabulary practice</p>

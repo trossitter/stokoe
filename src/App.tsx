@@ -375,7 +375,7 @@ export default function App() {
               className="flex items-center gap-3 rounded-lg pr-2 transition-colors hover:bg-slate-800/60"
               aria-label="Restart onboarding"
             >
-              <img src="/logo.webp" alt="" className="h-14 w-14 rounded object-cover object-center" />
+              <img src="/logo.svg" alt="" className="h-14 w-14 rounded object-contain" />
               <h1 className="text-base font-bold text-slate-100 tracking-tight">Stokoe</h1>
             </button>
             <span className="text-xs text-slate-400">ASL 1 practice</span>

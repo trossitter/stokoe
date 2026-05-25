@@ -51,8 +51,7 @@
 .ls-logo {
   height: 44px;
   width: 44px;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
   border-radius: 10px;
 }
 
