@@ -18,6 +18,40 @@ type VideoStatus = {
   error: boolean;
 };
 
+type RecordingPauseState = {
+  url: string | null;
+  paused: boolean;
+};
+
+function PlayPauseButton({
+  paused,
+  onClick,
+  label,
+}: {
+  paused: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="absolute bottom-2 left-2 flex h-7 items-center justify-center text-white transition-colors hover:bg-black/70"
+      style={{ background: "rgba(0,0,0,0.5)", borderRadius: 6, padding: "4px 8px" }}
+      aria-label={label}
+    >
+      {paused ? (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M3 2.5l10 5.5-10 5.5V2.5z" />
+        </svg>
+      ) : (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M4 2h2.5v12H4V2zm5.5 0H12v12H9.5V2z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function Placeholder({ word, reason }: { word: string; reason: "missing" | "error" }) {
   return (
     <div className="aspect-video flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-xl border border-slate-700">
@@ -45,6 +79,7 @@ function Placeholder({ word, reason }: { word: string; reason: "missing" | "erro
 
 export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const recordingVideoRef = useRef<HTMLVideoElement>(null);
   const [speed, setSpeed] = useState(1.0);
   const [videoStatus, setVideoStatus] = useState<VideoStatus>({
     itemId: item.id,
@@ -52,11 +87,19 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
     loading: true,
     error: false,
   });
+  const [recordingPauseState, setRecordingPauseState] = useState<RecordingPauseState>({
+    url: null,
+    paused: false,
+  });
 
   const videoUrl = SIGN_VIDEOS[item.id];
   const status = videoStatus.itemId === item.id
     ? videoStatus
     : { itemId: item.id, paused: false, loading: true, error: false };
+  const recordingPaused =
+    sessionState === "result" &&
+    recordingPauseState.url === recordingUrl &&
+    recordingPauseState.paused;
 
   const updateVideoStatus = (patch: Partial<Omit<VideoStatus, "itemId">>) => {
     setVideoStatus((prev) => {
@@ -86,6 +129,16 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
     }
   };
 
+  const handleRecordingPlayPause = () => {
+    const v = recordingVideoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play();
+    } else {
+      v.pause();
+    }
+  };
+
   const handleSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const idx = Number(e.target.value);
     setSpeed(SPEED_STEPS[idx]);
@@ -105,23 +158,6 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-slate-400">Reference</span>
-        {videoUrl && !status.error && (
-          <button
-            onClick={handlePlayPause}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors"
-            aria-label={status.paused ? "Play" : "Pause"}
-          >
-            {status.paused ? (
-              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M3 2.5l10 5.5-10 5.5V2.5z" />
-              </svg>
-            ) : (
-              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M4 2h2.5v12H4V2zm5.5 0H12v12H9.5V2z" />
-              </svg>
-            )}
-          </button>
-        )}
       </div>
 
       {/* Video area */}
@@ -159,22 +195,37 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
             onWaiting={() => updateVideoStatus({ loading: true })}
             onError={() => updateVideoStatus({ error: true, loading: false })}
           />
+          <PlayPauseButton
+            paused={status.paused}
+            onClick={handlePlayPause}
+            label={status.paused ? "Play reference" : "Pause reference"}
+          />
         </div>
       )}
 
       {recordingUrl && sessionState === "result" && (
         <div className="flex flex-col gap-1">
           <span className="text-xs text-slate-400">Your attempt</span>
-          <video
-            key={recordingUrl}
-            src={recordingUrl}
-            className="w-full rounded-lg aspect-video object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{ transform: "scaleX(-1)" }}
-          />
+          <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900">
+            <video
+              key={recordingUrl}
+              ref={recordingVideoRef}
+              src={recordingUrl}
+              className="h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              onPlay={() => setRecordingPauseState({ url: recordingUrl, paused: false })}
+              onPause={() => setRecordingPauseState({ url: recordingUrl, paused: true })}
+              style={{ transform: "scaleX(-1)" }}
+            />
+            <PlayPauseButton
+              paused={recordingPaused}
+              onClick={handleRecordingPlayPause}
+              label={recordingPaused ? "Play your attempt" : "Pause your attempt"}
+            />
+          </div>
         </div>
       )}
 
