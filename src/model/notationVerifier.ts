@@ -111,6 +111,44 @@ function checkTab(
 
 // ── Sig (movement) verifier ───────────────────────────────────────────────────
 
+type Axis = "x" | "y";
+
+const REVERSAL_EPS = 0.0001;
+const FINGERTIP_INDICES = [4, 8, 12, 16, 20];
+
+function reversalEvents(deltas: number[], axis: Axis): Array<{ axis: Axis; index: number }> {
+  const events: Array<{ axis: Axis; index: number }> = [];
+  for (let i = 1; i < deltas.length; i++) {
+    if (deltas[i] * deltas[i - 1] < -REVERSAL_EPS) {
+      events.push({ axis, index: i });
+    }
+  }
+  return events;
+}
+
+function countReversals(deltas: number[]): number {
+  return reversalEvents(deltas, "x").length;
+}
+
+function hasInterleavedReversals(
+  xEvents: Array<{ axis: Axis; index: number }>,
+  yEvents: Array<{ axis: Axis; index: number }>,
+): boolean {
+  const ordered = [...xEvents, ...yEvents].sort((a, b) => a.index - b.index);
+  const axisRuns = ordered.reduce<Axis[]>((runs, event) => {
+    if (runs[runs.length - 1] !== event.axis) runs.push(event.axis);
+    return runs;
+  }, []);
+
+  return axisRuns.length >= 3 && axisRuns.includes("x") && axisRuns.includes("y");
+}
+
+function variance(values: number[]): number {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+}
+
 function checkSig(
   frames: KeypointFrame[],
   expectedSig: string,
@@ -126,22 +164,21 @@ function checkSig(
   // Displacement vectors
   const dx = wrists.map((w, i) => i > 0 ? w.x - wrists[i-1].x : 0);
   const dy = wrists.map((w, i) => i > 0 ? w.y - wrists[i-1].y : 0);
-  const totalMovement = dx.reduce((s, v) => s + Math.abs(v), 0) +
-                        dy.reduce((s, v) => s + Math.abs(v), 0);
+  const lateralMovement = dx.reduce((s, v) => s + Math.abs(v), 0);
+  const verticalMovement = dy.reduce((s, v) => s + Math.abs(v), 0);
+  const totalMovement = lateralMovement + verticalMovement;
 
   let passed: boolean;
   let hint: string;
 
   switch (expectedSig) {
     case "D@": {  // circular
-      // Detect direction reversals in both axes
-      let xReversals = 0;
-      let yReversals = 0;
-      for (let i = 1; i < dx.length - 1; i++) {
-        if (dx[i] * dx[i-1] < -0.0001) xReversals++;
-        if (dy[i] * dy[i-1] < -0.0001) yReversals++;
-      }
-      passed = xReversals >= 1 && yReversals >= 1 && totalMovement > 0.03;
+      const xEvents = reversalEvents(dx, "x");
+      const yEvents = reversalEvents(dy, "y");
+      passed = xEvents.length >= 1 &&
+               yEvents.length >= 1 &&
+               hasInterleavedReversals(xEvents, yEvents) &&
+               totalMovement > 0.03;
       hint = "Make a circular motion — your hand should trace a circle.";
       break;
     }
@@ -182,11 +219,22 @@ function checkSig(
       hint = "Twist or shake your wrist.";
       break;
     }
+    case "De": {  // finger wiggle
+      const fingertipXs = validFrames.map(f => {
+        const landmarks = f.landmarks!;
+        const wristX = landmarks[0].x;
+        return FINGERTIP_INDICES.reduce((sum, idx) => sum + (landmarks[idx].x - wristX), 0) /
+               FINGERTIP_INDICES.length;
+      });
+      const dTipX = fingertipXs.map((x, i) => i > 0 ? x - fingertipXs[i - 1] : 0);
+      passed = countReversals(dTipX) >= 2 &&
+               variance(fingertipXs) > 0.00005 &&
+               totalMovement < 0.12;
+      hint = "Wiggle your fingers while keeping your hand mostly in place.";
+      break;
+    }
     case "Dz": {  // side to side
-      let lateralReversals = 0;
-      for (let i = 1; i < dx.length - 1; i++) {
-        if (dx[i] * dx[i-1] < -0.0001) lateralReversals++;
-      }
+      const lateralReversals = countReversals(dx);
       passed = lateralReversals >= 1 && totalMovement > 0.02;
       hint = "Shake your hand side to side.";
       break;
@@ -197,12 +245,17 @@ function checkSig(
       break;
     }
     case "Dr": {  // nod
-      let vertReversals = 0;
-      for (let i = 1; i < dy.length - 1; i++) {
-        if (dy[i] * dy[i-1] < -0.0001) vertReversals++;
-      }
-      passed = vertReversals >= 1 || totalMovement > 0.02;
+      const vertReversals = countReversals(dy);
+      passed = vertReversals >= 2 && verticalMovement > 0.02;
       hint = "Nod your hand up and down.";
+      break;
+    }
+    case "Dw": {  // up-down
+      const vertReversals = countReversals(dy);
+      passed = vertReversals >= 2 &&
+               verticalMovement > 0.03 &&
+               verticalMovement >= lateralMovement * 1.5;
+      hint = "Move your hand up and down.";
       break;
     }
     case "D": {  // static hold

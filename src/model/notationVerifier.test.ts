@@ -13,9 +13,24 @@ function landmarksAt(x: number, y: number, z = 0): Landmark[] {
   }));
 }
 
+function landmarksWithTipShift(x: number, y: number, tipShift: number): Landmark[] {
+  const landmarks = landmarksAt(x, y);
+  for (const index of [4, 8, 12, 16, 20]) {
+    landmarks[index] = { ...landmarks[index], x: landmarks[index].x + tipShift };
+  }
+  return landmarks;
+}
+
 function framesFrom(points: Array<[number, number]>): KeypointFrame[] {
   return points.map(([x, y], i) => ({
     landmarks: landmarksAt(x, y),
+    timestamp: i * 100,
+  }));
+}
+
+function framesWithTipShifts(shifts: number[]): KeypointFrame[] {
+  return shifts.map((shift, i) => ({
+    landmarks: landmarksWithTipShift(0.5, 0.5, shift),
     timestamp: i * 100,
   }));
 }
@@ -62,6 +77,7 @@ describe("verifyNotation sig checks", () => {
     ["D@", [[0.5, 0.5], [0.6, 0.55], [0.5, 0.6], [0.4, 0.55], [0.5, 0.5]]],
     ["Dx", [[0.5, 0.5], [0.52, 0.5], [0.5, 0.5]]],
     ["Df", [[0.45, 0.5], [0.51, 0.5], [0.57, 0.5]]],
+    ["Dw", [[0.5, 0.5], [0.5, 0.56], [0.5, 0.5], [0.5, 0.56], [0.5, 0.5]]],
     ["D", [[0.5, 0.5], [0.505, 0.5], [0.5, 0.505]]],
   ];
 
@@ -75,6 +91,42 @@ describe("verifyNotation sig checks", () => {
 
     expect(result.passed).toBe(true);
     expect(result.failedParameter).toBeNull();
+  });
+
+  it("passes De for fingertip wiggle without wrist travel", async () => {
+    const result = await verifyNotation(
+      framesWithTipShifts([0, 0.03, -0.03, 0.03, -0.03]),
+      notation("0", "De"),
+      dezPredictor("B"),
+      null,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
+  });
+
+  it("fails D@ when x and y reversals are grouped instead of interleaved", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.4, 0.45], [0.6, 0.45], [0.4, 0.45], [0.6, 0.45], [0.6, 0.6], [0.6, 0.45]]),
+      notation("0", "D@"),
+      dezPredictor("B"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("sig");
+  });
+
+  it("fails Dr for a single vertical reversal", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.5, 0.5], [0.5, 0.56], [0.5, 0.5]]),
+      notation("0", "Dr"),
+      dezPredictor("B"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("sig");
   });
 });
 
