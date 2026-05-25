@@ -9,7 +9,7 @@ import { WebcamView } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { LoginScreen } from "./components/LoginScreen";
-import { SwipeTutorial } from "./components/SwipeTutorial";
+import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
 
 type SessionState = "idle" | "evaluating" | "result";
@@ -194,7 +194,7 @@ export default function App() {
         />
       </main>
 
-      {showTutorial && <SwipeTutorial videoRef={videoRef} onComplete={handleTutorialComplete} />}
+      {showTutorial && <Onboarding onComplete={handleTutorialComplete} />}
     </div>
   );
 }
