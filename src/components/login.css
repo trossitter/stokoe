@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 32px;
   background: var(--bg);
   color: var(--fg);
   font-family: "Newsreader", Georgia, serif;
@@ -36,38 +36,38 @@
 
 .ls-card {
   width: 100%;
-  max-width: 360px;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 40px;
 }
 
 .ls-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
 }
 
 .ls-logo {
-  height: 44px;
-  width: 44px;
+  height: 72px;
+  width: 72px;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 16px;
 }
 
 .ls-brand-text h1 {
   margin: 0;
-  font-size: 1.65rem;
+  font-size: clamp(2.35rem, 4vw, 3.15rem);
   font-weight: 400;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--fg);
   line-height: 1;
 }
 
 .ls-brand-text p {
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   font-family: "JetBrains Mono", monospace;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--fg-faint);
@@ -81,7 +81,7 @@
 
 .ls-label {
   font-family: "JetBrains Mono", monospace;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg-mute);
@@ -95,9 +95,9 @@
   border-radius: 10px;
   color: var(--fg);
   font-family: "Newsreader", Georgia, serif;
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 300;
-  padding: 13px 16px;
+  padding: 17px 18px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -114,12 +114,13 @@
 .ls-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 14px;
 }
 
 .ls-btn {
-  padding: 14px 16px;
-  border-radius: 10px;
+  min-height: 92px;
+  padding: 20px 22px;
+  border-radius: 14px;
   border: 1px solid var(--rule);
   cursor: pointer;
   text-align: left;
@@ -134,16 +135,16 @@
 .ls-btn-label {
   display: block;
   font-family: "Newsreader", Georgia, serif;
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   font-weight: 400;
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .ls-btn-sub {
   display: block;
   font-family: "JetBrains Mono", monospace;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -185,9 +186,30 @@
 
 .ls-footer {
   font-family: "JetBrains Mono", monospace;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   letter-spacing: 0.06em;
   color: var(--fg-faint);
   text-align: center;
   opacity: 0.7;
+}
+
+@media (max-width: 560px) {
+  .ls-root {
+    align-items: stretch;
+    padding: 24px;
+  }
+
+  .ls-card {
+    justify-content: center;
+    max-width: none;
+  }
+
+  .ls-logo {
+    height: 60px;
+    width: 60px;
+  }
+
+  .ls-actions {
+    grid-template-columns: 1fr;
+  }
 }

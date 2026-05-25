@@ -4,11 +4,11 @@ export function PanelWelcome() {
   return (
     <section className="ob-panel">
       <MoteField />
-      <div className="ob-pad" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div className="ob-pad ob-welcome-pad">
         <div className="ob-micro" style={{ marginBottom: 28 }}>
           <span style={{ color: "var(--accent)" }}>◍</span>&nbsp;&nbsp;Vocabulary tutor
         </div>
-        <h1 className="ob-h-mega" style={{ maxWidth: "16ch" }}>
+        <h1 className="ob-h-mega">
           Stokoe<span className="ob-it">.</span>
         </h1>
         <div className="ob-lede" style={{ marginTop: 40 }}>
@@ -29,7 +29,7 @@ export function PanelWelcome() {
             </span>
           </div>
         </div>
-        <div style={{ marginTop: 64, fontFamily: "'JetBrains Mono', monospace", fontSize: 12.5, color: "var(--fg-faint)", letterSpacing: "0.02em", maxWidth: 560, lineHeight: 1.75 }}>
+        <div className="ob-welcome-quote">
           "Speech is sufficient for language, but not necessary." —{" "}
           <span style={{ color: "var(--fg-mute)" }}>William&nbsp;Stokoe</span>, American linguist who revolutionized understanding of{" "}
           <span style={{ color: "var(--fg-mute)" }}>ASL</span>.

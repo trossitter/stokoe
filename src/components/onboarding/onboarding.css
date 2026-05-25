@@ -80,6 +80,7 @@
   padding: 120px 96px 96px;
   box-sizing: border-box;
   width: 100%;
+  min-height: 100vh;
 }
 
 /* Mote field canvas */
@@ -327,12 +328,41 @@
 .ob-grid-2 { grid-template-columns: 1fr 1fr; }
 .ob-grid-2-r { grid-template-columns: 1.1fr 0.9fr; }
 
+.ob-welcome-pad {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ob-welcome-pad .ob-h-mega {
+  max-width: none;
+}
+.ob-welcome-pad .ob-lede {
+  max-width: min(760px, 100%);
+}
+.ob-welcome-pad .ob-welcome-terms {
+  justify-content: center;
+}
+.ob-welcome-quote {
+  margin-top: 64px;
+  max-width: 760px;
+  color: var(--fg-faint);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+}
+
 /* Parameters panel */
 .ob-params {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 48px;
+  width: 100%;
   max-width: 1280px;
+  margin: 0 auto;
 }
 .ob-param {
   display: flex;
@@ -412,6 +442,9 @@
   grid-template-columns: minmax(520px, 0.95fr) minmax(420px, 0.72fr);
   gap: 72px;
   align-items: center;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 .ob-practice-preview {
   border: 1px solid var(--rule);
@@ -626,11 +659,28 @@
 }
 .ob-permission-layout {
   gap: 64px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
 }
 
 @media (max-width: 900px) {
   .ob-pad {
     padding: 104px 32px 82px;
+  }
+
+  .ob-welcome-pad {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .ob-welcome-pad .ob-welcome-terms {
+    justify-content: flex-start;
+  }
+
+  .ob-welcome-quote {
+    font-size: 12px;
+    max-width: 100%;
   }
 
   .ob-feedback-layout {
