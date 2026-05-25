@@ -10,6 +10,7 @@ type Props = {
   hintKey: HintKey | null;
   confidence: number | null;
   progress: Progress;
+  paused?: boolean;
 };
 
 const HINT_LABEL: Record<HintKey, string> = {
@@ -20,7 +21,7 @@ const HINT_LABEL: Record<HintKey, string> = {
   framing: "Camera framing",
 };
 
-export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence, progress }: Props) {
+export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence, progress, paused = false }: Props) {
   return (
     <section
       className="rounded-2xl shadow-sm border p-4 flex flex-col min-h-0 gap-4"
@@ -37,12 +38,14 @@ export function FeedbackPanel({ item, sessionState, passed, hintKey, confidence,
 
         {sessionState === "idle" && (
           <p className="text-sm text-slate-400">
-            Place your signing hand inside the guide box and hold still — recording starts automatically.
+            {paused
+              ? "Start from the prompt card when you are ready."
+              : "Read the prompt, get situated, then press Record attempt when you are ready."}
           </p>
         )}
 
         {sessionState === "recording" && (
-          <p className="text-sm text-amber-600 font-medium">Recording your sign…</p>
+          <p className="text-sm text-red-300 font-medium">Recording your sign…</p>
         )}
 
         {sessionState === "evaluating" && (

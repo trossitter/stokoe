@@ -112,15 +112,13 @@ export function Onboarding({ onComplete }: Props) {
         <PanelWelcome />
         <PanelParameters />
         <PanelFeedback />
-        <PanelPermission
-          stream={stream}
-          onAllow={requestCamera}
-          onClose={closeCamera}
-          error={camError}
-        />
+        <PanelPermission />
         <PanelFraming
           stream={stream}
           active={index === 4}
+          onAllow={requestCamera}
+          onClose={closeCamera}
+          error={camError}
           onReady={() => setFramingReady(true)}
           ready={framingReady}
         />

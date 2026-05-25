@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { isThumbsUp, isOpenFive } from "./useGestureNav";
 
 // Landmark indices used by both functions:
@@ -20,13 +21,14 @@ import { isThumbsUp, isOpenFive } from "./useGestureNav";
 
 type LandmarkOverrides = Partial<Record<number, { x?: number; y: number; z?: number }>>;
 
-function lm(overrides: LandmarkOverrides = {}) {
+function lm(overrides: LandmarkOverrides = {}): NormalizedLandmark[] {
   return Array.from({ length: 21 }, (_, i) => ({
     x: 0.5,
     y: 0.5 + i * 0.01, // default: each subsequent landmark slightly lower
     z: 0,
+    visibility: 1,
     ...(overrides[i] !== undefined
-      ? { x: 0.5, z: 0, ...overrides[i] }
+      ? { x: 0.5, z: 0, visibility: 1, ...overrides[i] }
       : {}),
   }));
 }

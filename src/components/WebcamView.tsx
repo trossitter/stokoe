@@ -1,87 +1,181 @@
-import { useEffect, useRef } from "react";
-import { useWebcam } from "../hooks/useWebcam";
-import { usePresenceTrigger } from "../hooks/usePresenceTrigger";
+import { useEffect, useRef, useState } from "react";
+import { captureFrame, useWebcam } from "../hooks/useWebcam";
 
 const ROI = { x: 0.12, y: 0.05, w: 0.76, h: 0.9 };
+const COUNTDOWN_MS = 1000;
+const RECORD_DURATION_MS = 2200;
+const FRAME_INTERVAL_MS = 100;
 
 type Props = {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   sessionState: "idle" | "recording" | "evaluating" | "result";
+  paused?: boolean;
+  cameraEnabled?: boolean;
+  recordRequestId?: number;
   onFramesReady: (frames: ImageData[]) => void;
   onRecordingReady: (url: string) => void;
   overlay?: React.ReactNode;
 };
 
-export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingReady, overlay }: Props) {
+type RecordingCueState = "idle" | "countdown" | "recording";
+
+export function WebcamView({
+  videoRef,
+  sessionState,
+  paused = false,
+  cameraEnabled = true,
+  recordRequestId = 0,
+  onFramesReady,
+  onRecordingReady,
+  overlay,
+}: Props) {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
-  const recorderRef = useRef<MediaRecorder | null>(null);
   const onRecordingReadyRef = useRef(onRecordingReady);
+  const onFramesReadyRef = useRef(onFramesReady);
   const liveVideoRef = useRef(videoRef);
+  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [recordingCueState, setRecordingCueState] = useState<RecordingCueState>("idle");
+  const [countdown, setCountdown] = useState(0);
 
-  const camState = useWebcam(videoRef);
-  const triggerEnabled = sessionState === "idle";
-
-  const { state: triggerState, countdown, reset } = usePresenceTrigger(
-    videoRef,
-    ROI,
-    onFramesReady,
-    triggerEnabled,
-  );
-
-  // Reset presence trigger when session returns to idle after a result
-  useEffect(() => {
-    if (sessionState === "idle") reset();
-  }, [sessionState, reset]);
+  const camState = useWebcam(videoRef, cameraEnabled);
 
   useEffect(() => {
     onRecordingReadyRef.current = onRecordingReady;
   }, [onRecordingReady]);
 
   useEffect(() => {
+    onFramesReadyRef.current = onFramesReady;
+  }, [onFramesReady]);
+
+  useEffect(() => {
     liveVideoRef.current = videoRef;
   }, [videoRef]);
 
   useEffect(() => {
-    if (triggerState === "recording") {
-      if (recorderRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
 
-      const stream = liveVideoRef.current.current?.srcObject as MediaStream | null;
-      if (!stream) return;
-
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
-      const chunks: BlobPart[] = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        onRecordingReadyRef.current(url);
-      };
-
-      recorderRef.current = recorder;
-      recorder.start();
-      return;
+    if (paused) {
+      video.pause();
+    } else if (camState === "active") {
+      video.play().catch(() => {});
     }
-
-    const recorder = recorderRef.current;
-    if (recorder && recorder.state !== "inactive") {
-      recorder.stop();
-    }
-    recorderRef.current = null;
-  }, [triggerState]);
+  }, [camState, paused, videoRef]);
 
   useEffect(() => {
-    return () => {
-      const recorder = recorderRef.current;
+    if (!recordRequestId || paused || !cameraEnabled || sessionState !== "recording") return;
+
+    let alive = true;
+    let cueRaf = 0;
+    let waitRaf = 0;
+    let recordTimer = 0;
+    let frameInterval: ReturnType<typeof setInterval> | null = null;
+    let recorder: MediaRecorder | null = null;
+    const frames: ImageData[] = [];
+    const chunks: BlobPart[] = [];
+
+    const stopRecorder = () => {
       if (recorder && recorder.state !== "inactive") {
         recorder.stop();
       }
-      recorderRef.current = null;
     };
-  }, []);
+
+    const finishEmpty = () => {
+      if (!alive) return;
+      setRecordingCueState("idle");
+      setCountdown(0);
+      onFramesReadyRef.current([]);
+    };
+
+    const finishRecording = () => {
+      if (!alive) return;
+      if (frameInterval) {
+        clearInterval(frameInterval);
+        frameInterval = null;
+      }
+      stopRecorder();
+      setRecordingCueState("idle");
+      setCountdown(0);
+      onFramesReadyRef.current(frames);
+    };
+
+    const beginRecording = (video: HTMLVideoElement) => {
+      setRecordingCueState("recording");
+      setCountdown(1);
+
+      const stream = video.srcObject as MediaStream | null;
+      if (stream) {
+        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : "video/webm";
+        recorder = new MediaRecorder(stream, { mimeType });
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "video/webm" });
+          const url = URL.createObjectURL(blob);
+          onRecordingReadyRef.current(url);
+        };
+        recorder.start();
+      }
+
+      const grabFrame = () => {
+        if (!captureCanvasRef.current) {
+          captureCanvasRef.current = document.createElement("canvas");
+        }
+        const frame = captureFrame(video, captureCanvasRef.current, ROI);
+        if (frame) frames.push(frame);
+      };
+
+      grabFrame();
+      frameInterval = setInterval(grabFrame, FRAME_INTERVAL_MS);
+      recordTimer = window.setTimeout(finishRecording, RECORD_DURATION_MS);
+    };
+
+    const beginCountdown = (video: HTMLVideoElement) => {
+      setRecordingCueState("countdown");
+      const startedAt = performance.now();
+
+      const tick = (now: number) => {
+        if (!alive) return;
+        const progress = Math.min(1, (now - startedAt) / COUNTDOWN_MS);
+        setCountdown(progress);
+        if (progress >= 1) {
+          beginRecording(video);
+          return;
+        }
+        cueRaf = requestAnimationFrame(tick);
+      };
+
+      cueRaf = requestAnimationFrame(tick);
+    };
+
+    const waitForVideo = (startedAt: number) => {
+      const video = videoRef.current;
+      if (video && video.readyState >= 2) {
+        beginCountdown(video);
+        return;
+      }
+      if (performance.now() - startedAt > 3000) {
+        finishEmpty();
+        return;
+      }
+      waitRaf = requestAnimationFrame(() => waitForVideo(startedAt));
+    };
+
+    waitForVideo(performance.now());
+
+    return () => {
+      alive = false;
+      cancelAnimationFrame(cueRaf);
+      cancelAnimationFrame(waitRaf);
+      window.clearTimeout(recordTimer);
+      if (frameInterval) clearInterval(frameInterval);
+      stopRecorder();
+    };
+  }, [cameraEnabled, paused, recordRequestId, sessionState, videoRef]);
 
   // Draw ROI overlay
   useEffect(() => {
@@ -105,20 +199,20 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingR
       const cy = ry + rh / 2;
       const cr = Math.min(rw, rh) * 0.48;
 
-      const borderColor = triggerState === "recording" ? "#ef4444"
-                        : triggerState === "countdown"  ? "#f59e0b"
-                        : triggerState === "detecting"  ? "#10b981"
+      const borderColor = paused ? "rgba(148,163,184,0.45)"
+                        : recordingCueState === "recording" ? "#ef4444"
+                        : recordingCueState === "countdown" ? "#f59e0b"
                         : "rgba(255,255,255,0.35)";
 
       ctx.strokeStyle = borderColor;
-      ctx.lineWidth = triggerState === "recording" ? 3 : 2;
+      ctx.lineWidth = recordingCueState === "recording" ? 3 : 2;
       ctx.beginPath();
       ctx.arc(cx, cy, cr, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Countdown arc — sweeps clockwise from top as presence holds
-      if ((triggerState === "detecting" || triggerState === "countdown") && countdown > 0) {
-        ctx.strokeStyle = "rgba(16, 185, 129, 0.7)";
+      // Countdown arc — sweeps clockwise before explicit recording begins
+      if (recordingCueState === "countdown" && countdown > 0) {
+        ctx.strokeStyle = "rgba(245, 158, 11, 0.82)";
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(cx, cy, cr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * countdown);
@@ -126,7 +220,7 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingR
       }
 
       // State label
-      if (triggerState === "recording") {
+      if (recordingCueState === "recording") {
         ctx.fillStyle = "#ef4444";
         ctx.beginPath();
         ctx.arc(rx + rw - 14, ry + 14, 6, 0, Math.PI * 2);
@@ -139,15 +233,19 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingR
       // Guide instruction — centred inside/below the circle
       const labelY = cy + cr + 20;
       ctx.textAlign = "center";
-      if (triggerState === "idle" && camState === "active") {
+      if (paused && camState === "active") {
+        ctx.fillStyle = "rgba(255,255,255,0.68)";
+        ctx.font = "12px system-ui";
+        ctx.fillText("Paused", cx, labelY);
+      } else if (recordingCueState === "idle" && camState === "active") {
         ctx.fillStyle = "rgba(255,255,255,0.55)";
         ctx.font = "12px system-ui";
-        ctx.fillText("Place your hand in the circle to begin", cx, labelY);
-      } else if (triggerState === "detecting") {
-        ctx.fillStyle = "rgba(16,185,129,0.8)";
+        ctx.fillText("Press Record attempt when ready", cx, labelY);
+      } else if (recordingCueState === "countdown") {
+        ctx.fillStyle = "rgba(245,158,11,0.9)";
         ctx.font = "12px system-ui";
-        ctx.fillText("Hold still…", cx, labelY);
-      } else if (triggerState === "recording") {
+        ctx.fillText("Get ready…", cx, labelY);
+      } else if (recordingCueState === "recording") {
         ctx.fillStyle = "rgba(239,68,68,0.8)";
         ctx.font = "12px system-ui";
         ctx.fillText("Sign now", cx, labelY);
@@ -159,7 +257,7 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingR
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [camState, triggerState, countdown]);
+  }, [camState, recordingCueState, countdown, paused]);
 
   // Iris: open circle when active, closes to smaller circle during result review
   const shutterOpen = sessionState !== "result";
@@ -189,6 +287,11 @@ export function WebcamView({ videoRef, sessionState, onFramesReady, onRecordingR
       {camState === "requesting" && (
         <div className="absolute inset-0 flex items-center justify-center">
           <p className="text-slate-400 text-sm">Requesting camera…</p>
+        </div>
+      )}
+      {!cameraEnabled && (
+        <div className="absolute inset-0 flex items-center justify-center text-center px-6">
+          <p className="text-slate-400 text-sm">Camera paused.</p>
         </div>
       )}
       <video

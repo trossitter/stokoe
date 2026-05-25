@@ -61,13 +61,17 @@
 /* Panel */
 .ob-panel {
   flex: 0 0 100%;
+  min-width: 0;
   height: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .ob-pad {
   padding: 120px 96px 96px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Mote field canvas */
@@ -265,6 +269,30 @@
   font-weight: 300;
   margin: 0;
 }
+.ob-welcome-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 26px;
+  margin-top: 22px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.ob-welcome-terms span {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ob-welcome-terms strong {
+  font-weight: 400;
+}
+.ob-welcome-terms small {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--fg-faint);
+}
 .ob-micro {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
@@ -359,6 +387,159 @@
   font-weight: 300;
   letter-spacing: -0.01em;
 }
+.ob-wordcard-compact {
+  min-width: 148px;
+  padding: 14px 20px;
+}
+.ob-wordcard-compact .ob-wordcard-lbl {
+  margin-bottom: 8px;
+}
+.ob-wordcard-compact .ob-wordcard-word {
+  font-size: 28px;
+}
+
+/* Feedback preview panel */
+.ob-feedback-layout {
+  display: grid;
+  grid-template-columns: minmax(520px, 0.95fr) minmax(420px, 0.72fr);
+  gap: 72px;
+  align-items: center;
+}
+.ob-practice-preview {
+  border: 1px solid var(--rule);
+  background:
+    radial-gradient(circle at 20% 10%, color-mix(in oklch, var(--bloom) 10%, transparent), transparent 38%),
+    color-mix(in oklch, var(--fg) 2.5%, transparent);
+  padding: 24px;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.ob-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ob-verdict-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ob-verdict-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.ob-verdict-compact {
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+.ob-video-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.ob-mini-video {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 330px;
+  border: 1px solid color-mix(in oklch, var(--rule) 82%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--fg) 4%, transparent), transparent 48%),
+    color-mix(in oklch, var(--bg-2) 72%, #000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ob-mini-video::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in oklch, var(--fg) 4%, transparent), transparent),
+    repeating-linear-gradient(180deg, transparent 0 11px, rgba(255,255,255,.025) 12px);
+  opacity: 0.42;
+  pointer-events: none;
+}
+.ob-mini-video-muted {
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in oklch, var(--bloom) 8%, transparent), transparent 45%),
+    color-mix(in oklch, var(--bg) 78%, #000);
+}
+.ob-mini-video-label,
+.ob-mini-video-chip {
+  position: absolute;
+  z-index: 2;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.ob-mini-video-label {
+  top: 18px;
+  left: 18px;
+  color: var(--fg-faint);
+}
+.ob-mini-video-chip {
+  left: 18px;
+  bottom: 18px;
+  border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--rule));
+  color: color-mix(in oklch, var(--accent) 45%, var(--fg-mute));
+  padding: 8px 10px;
+  background: rgba(0,0,0,.28);
+}
+.ob-mini-video-figure {
+  width: min(220px, 86%);
+  opacity: 0.92;
+}
+.ob-mini-video-figure .ob-primitive {
+  max-width: 100%;
+}
+.ob-attempt-figure {
+  position: relative;
+  width: min(220px, 82%);
+  aspect-ratio: 1 / 1;
+  border: 1px solid color-mix(in oklch, var(--fg-faint) 42%, transparent);
+  border-radius: 50%;
+  opacity: 0.92;
+}
+.ob-attempt-path {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 52%;
+  height: 1px;
+  background: color-mix(in oklch, var(--accent) 55%, var(--fg-faint));
+  transform: rotate(18deg);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--accent) 28%, transparent);
+}
+.ob-attempt-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--accent) 58%, transparent);
+}
+.ob-attempt-dot.one { left: 23%; top: 38%; opacity: .42; }
+.ob-attempt-dot.two { left: 49%; top: 50%; opacity: .68; }
+.ob-attempt-dot.three { right: 24%; top: 62%; }
+.ob-feedback-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 42px;
+  min-width: 0;
+}
 
 /* Diagnostic bars */
 .ob-diag { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 520px; }
@@ -369,6 +550,26 @@
   color: var(--fg-mute);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+.ob-diag-name strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--fg);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+.ob-diag-large {
+  max-width: 560px;
+  gap: 20px;
+}
+.ob-diag-large .ob-diag-row {
+  grid-template-columns: 112px 1fr 48px;
+}
+.ob-diag-large .ob-meter {
+  height: 5px;
 }
 .ob-meter { height: 2px; background: var(--rule); position: relative; overflow: hidden; }
 .ob-meter-fill {
@@ -385,6 +586,170 @@
   font-size: 11px;
   color: var(--fg-mute);
   text-align: right;
+}
+
+.ob-info-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-self: center;
+  width: min(440px, 100%);
+}
+.ob-info-note {
+  border: 1px solid var(--rule);
+  background: color-mix(in oklch, var(--fg) 2.5%, transparent);
+  padding: 22px;
+  min-height: 132px;
+}
+.ob-info-note-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.ob-info-note p {
+  margin: 0;
+  color: var(--fg-mute);
+  font-size: 18px;
+  line-height: 1.42;
+  font-weight: 300;
+}
+.ob-permission-layout {
+  gap: 64px;
+}
+
+@media (max-width: 900px) {
+  .ob-pad {
+    padding: 104px 32px 82px;
+  }
+
+  .ob-feedback-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .ob-practice-preview {
+    min-height: 0;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .ob-preview-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ob-wordcard-compact {
+    min-width: 116px;
+    padding: 12px 14px;
+  }
+
+  .ob-wordcard-compact .ob-wordcard-word {
+    font-size: 22px;
+  }
+
+  .ob-verdict-compact {
+    padding: 10px 12px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+
+  .ob-verdict-card {
+    align-items: flex-start;
+  }
+
+  .ob-video-pair {
+    gap: 10px;
+  }
+
+  .ob-mini-video {
+    min-height: 154px;
+  }
+
+  .ob-mini-video-label,
+  .ob-mini-video-chip {
+    font-size: 8.5px;
+    letter-spacing: 0.12em;
+  }
+
+  .ob-mini-video-label {
+    top: 12px;
+    left: 12px;
+  }
+
+  .ob-mini-video-chip {
+    left: 12px;
+    bottom: 12px;
+    padding: 6px 8px;
+  }
+
+  .ob-feedback-copy {
+    gap: 22px;
+  }
+
+  .ob-feedback-copy .ob-h-1 {
+    font-size: clamp(36px, 14vw, 54px);
+  }
+
+  .ob-feedback-copy .ob-lede {
+    font-size: 15px;
+  }
+
+  .ob-diag-large {
+    gap: 14px;
+  }
+
+  .ob-diag-large .ob-diag-row {
+    grid-template-columns: 64px minmax(0, 1fr) 24px;
+    gap: 10px;
+  }
+
+  .ob-diag-name {
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+  }
+
+  .ob-diag-name strong {
+    font-size: 17px;
+  }
+
+  .ob-pct {
+    font-size: 10px;
+  }
+
+  .ob-info-stack {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .ob-info-note {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .ob-info-note-label {
+    margin-bottom: 10px;
+  }
+
+  .ob-info-note p {
+    font-size: 15px;
+  }
+
+  .ob-permission-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    align-content: center;
+  }
+
+  .ob-permission-layout .ob-h-1 {
+    font-size: clamp(42px, 14vw, 56px);
+    max-width: 10ch !important;
+    margin-bottom: 24px !important;
+  }
 }
 
 /* Verdict chip */

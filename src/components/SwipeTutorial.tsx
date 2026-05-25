@@ -10,7 +10,7 @@ const CARDS: Card[] = [
   },
   {
     title: "Hold your hand here",
-    body: "A box will appear on screen. Place your signing hand inside it and hold still. Recording starts automatically.",
+    body: "A guide appears on screen. Get situated first, then press Record attempt when you are ready.",
   },
   {
     title: "Three things we watch",
@@ -18,7 +18,7 @@ const CARDS: Card[] = [
   },
   {
     title: "Ready",
-    body: "Sign when the box glows green.",
+    body: "After the short cue, sign once inside the guide.",
   },
 ];
 

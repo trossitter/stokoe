@@ -25,7 +25,7 @@ export function PanelParameters() {
   return (
     <section className="ob-panel">
       <div className="ob-pad" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="ob-micro" style={{ marginBottom: 20 }}>Stokoe · 1960</div>
+        <div className="ob-micro" style={{ marginBottom: 20 }}>Three parameters</div>
         <h2 className="ob-h-1" style={{ maxWidth: "22ch", marginBottom: 72 }}>
           Every sign is <span className="ob-it">three things</span> at once.
         </h2>

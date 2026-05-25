@@ -2,11 +2,21 @@ import { useEffect, useRef, useState } from "react";
 
 export type WebcamState = "idle" | "requesting" | "active" | "denied" | "unavailable";
 
-export function useWebcam(videoRef: React.RefObject<HTMLVideoElement | null>) {
+export function useWebcam(videoRef: React.RefObject<HTMLVideoElement | null>, enabled = true) {
   const [state, setState] = useState<WebcamState>("idle");
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      const resetId = window.setTimeout(() => setState("idle"), 0);
+      return () => window.clearTimeout(resetId);
+    }
+
     if (!videoRef.current) return;
     setState("requesting");
 
@@ -26,8 +36,9 @@ export function useWebcam(videoRef: React.RefObject<HTMLVideoElement | null>) {
 
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     };
-  }, [videoRef]);
+  }, [enabled, videoRef]);
 
   return state;
 }

@@ -5,8 +5,8 @@ import { SIGN_VIDEOS } from "../data/videos";
 type Props = {
   item: VocabItem;
   hidden: boolean;
-  recordingUrl: string | null;
-  sessionState: "idle" | "recording" | "evaluating" | "result";
+  paused?: boolean;
+  onToggleHidden: () => void;
 };
 
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1.0];
@@ -16,11 +16,6 @@ type VideoStatus = {
   paused: boolean;
   loading: boolean;
   error: boolean;
-};
-
-type RecordingPauseState = {
-  url: string | null;
-  paused: boolean;
 };
 
 function PlayPauseButton({
@@ -77,9 +72,8 @@ function Placeholder({ word, reason }: { word: string; reason: "missing" | "erro
   );
 }
 
-export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
+export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const recordingVideoRef = useRef<HTMLVideoElement>(null);
   const [speed, setSpeed] = useState(1.0);
   const [videoStatus, setVideoStatus] = useState<VideoStatus>({
     itemId: item.id,
@@ -87,19 +81,11 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
     loading: true,
     error: false,
   });
-  const [recordingPauseState, setRecordingPauseState] = useState<RecordingPauseState>({
-    url: null,
-    paused: false,
-  });
 
   const videoUrl = SIGN_VIDEOS[item.id];
   const status = videoStatus.itemId === item.id
     ? videoStatus
     : { itemId: item.id, paused: false, loading: true, error: false };
-  const recordingPaused =
-    sessionState === "result" &&
-    recordingPauseState.url === recordingUrl &&
-    recordingPauseState.paused;
 
   const updateVideoStatus = (patch: Partial<Omit<VideoStatus, "itemId">>) => {
     setVideoStatus((prev) => {
@@ -117,20 +103,19 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
     }
   }, [speed]);
 
-  if (hidden) return null;
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (paused) {
+      video.pause();
+    } else if (videoUrl && !status.error) {
+      video.play().catch(() => {});
+    }
+  }, [paused, status.error, videoUrl]);
 
   const handlePlayPause = () => {
     const v = videoRef.current;
-    if (!v) return;
-    if (v.paused) {
-      v.play();
-    } else {
-      v.pause();
-    }
-  };
-
-  const handleRecordingPlayPause = () => {
-    const v = recordingVideoRef.current;
     if (!v) return;
     if (v.paused) {
       v.play();
@@ -161,7 +146,14 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
       </div>
 
       {/* Video area */}
-      {!videoUrl ? (
+      {hidden ? (
+        <div className="aspect-video flex flex-col items-center justify-center gap-2 bg-slate-900/80 rounded-xl border border-slate-700">
+          <p className="text-sm text-slate-300">Reference hidden</p>
+          <p className="max-w-[18rem] text-center text-xs leading-5 text-slate-500">
+            Bring it back when you want to compare the motion again.
+          </p>
+        </div>
+      ) : !videoUrl ? (
         <Placeholder word={item.word} reason="missing" />
       ) : status.error ? (
         <Placeholder word={item.word} reason="error" />
@@ -180,7 +172,7 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
             ref={videoRef}
             src={videoUrl}
             className="w-full h-full object-cover"
-            autoPlay
+            autoPlay={!paused}
             loop
             muted
             playsInline
@@ -203,34 +195,8 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
         </div>
       )}
 
-      {recordingUrl && sessionState === "result" && (
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-400">Your attempt</span>
-          <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900">
-            <video
-              key={recordingUrl}
-              ref={recordingVideoRef}
-              src={recordingUrl}
-              className="h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              onPlay={() => setRecordingPauseState({ url: recordingUrl, paused: false })}
-              onPause={() => setRecordingPauseState({ url: recordingUrl, paused: true })}
-              style={{ transform: "scaleX(-1)" }}
-            />
-            <PlayPauseButton
-              paused={recordingPaused}
-              onClick={handleRecordingPlayPause}
-              label={recordingPaused ? "Play your attempt" : "Pause your attempt"}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Speed controls — only shown when video is available */}
-      {videoUrl && !status.error && (
+      {!hidden && videoUrl && !status.error && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 shrink-0">Speed</span>
           <input
@@ -248,6 +214,13 @@ export function SignVideo({ item, hidden, recordingUrl, sessionState }: Props) {
           </span>
         </div>
       )}
+
+      <button
+        onClick={onToggleHidden}
+        className="mt-1 rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70"
+      >
+        {hidden ? "Show reference" : "Hide reference"}
+      </button>
     </section>
   );
 }
