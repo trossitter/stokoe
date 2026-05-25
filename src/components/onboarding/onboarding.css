@@ -28,6 +28,9 @@
 
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
   overflow: hidden;
   background: var(--bg);
   color: var(--fg);
@@ -53,16 +56,21 @@
 /* Carousel track */
 .ob-track {
   display: flex;
-  height: 100%;
+  width: 100vw;
+  min-width: 100vw;
+  height: 100vh;
   will-change: transform;
 }
 .ob-stage.dragging .ob-track { transition: none !important; }
 
 /* Panel */
 .ob-panel {
-  flex: 0 0 100%;
-  min-width: 0;
-  height: 100%;
+  flex: 0 0 100vw;
+  width: 100vw;
+  min-width: 100vw;
+  max-width: none;
+  height: 100vh;
+  min-height: 100vh;
   position: relative;
   display: flex;
   flex-direction: column;

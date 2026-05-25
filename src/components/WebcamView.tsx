@@ -285,7 +285,7 @@ export function WebcamView({
 
   return (
     <section
-      className="flex-1 overflow-hidden relative min-h-0 rounded-[28px] border border-slate-700/60"
+      className="h-full w-full overflow-hidden relative rounded-[28px] border border-slate-700/60"
       style={{ background: "oklch(0.12 0.02 260)", boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
     >
       {camState === "denied" && (

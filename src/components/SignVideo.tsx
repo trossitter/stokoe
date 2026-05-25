@@ -49,7 +49,7 @@ function PlayPauseButton({
 
 function Placeholder({ word, reason }: { word: string; reason: "missing" | "error" }) {
   return (
-    <div className="aspect-video flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-xl border border-slate-700">
+    <div className="aspect-[4/3] flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-xl border border-slate-700">
       <svg
         className="w-6 h-6 text-slate-500"
         fill="none"
@@ -133,7 +133,7 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
 
   return (
     <section
-      className="rounded-2xl shadow-sm border p-3 flex flex-col gap-2"
+      className="rounded-2xl shadow-sm border p-3 flex min-w-0 flex-col gap-2"
       style={{
         background: "oklch(0.26 0.030 260 / 0.75)",
         backdropFilter: "blur(8px)",
@@ -147,18 +147,15 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
 
       {/* Video area */}
       {hidden ? (
-        <div className="aspect-video flex flex-col items-center justify-center gap-2 bg-slate-900/80 rounded-xl border border-slate-700">
-          <p className="text-sm text-slate-300">Reference hidden</p>
-          <p className="max-w-[18rem] text-center text-xs leading-5 text-slate-500">
-            Bring it back when you want to compare the motion again.
-          </p>
+        <div className="aspect-[4/3] flex flex-col items-center justify-center gap-2 bg-slate-900/80 rounded-xl border border-slate-700">
+          <p className="text-sm text-slate-400">Reference hidden</p>
         </div>
       ) : !videoUrl ? (
         <Placeholder word={item.word} reason="missing" />
       ) : status.error ? (
         <Placeholder word={item.word} reason="error" />
       ) : (
-        <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900">
           {/* Loading pulse — shown until canplay fires */}
           {status.loading && (
             <div className="absolute inset-0 bg-slate-800 animate-pulse rounded-xl" />
@@ -171,7 +168,7 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
             key={item.id}
             ref={videoRef}
             src={videoUrl}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             autoPlay={!paused}
             loop
             muted

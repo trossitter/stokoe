@@ -442,7 +442,7 @@ export default function App() {
               paused={practicePaused}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
-            <div className="relative flex-1 grid gap-3 min-h-0 grid-cols-[minmax(132px,0.78fr)_minmax(0,1fr)]">
+            <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-[minmax(132px,0.78fr)_minmax(0,1fr)]">
               <PromptFocusOverlay
                 item={item}
                 vocabIndex={vocabIndex % activeOrder.length}
@@ -452,12 +452,12 @@ export default function App() {
                 sessionState={displayState}
                 onStart={handlePracticePauseToggle}
               />
-              <div className="flex min-h-0 flex-col gap-2">
-                <div className="relative flex min-h-0 flex-1">
-                <div className={`flex min-h-0 flex-1 ${reviewVisible ? "pointer-events-none opacity-0" : ""}`}>
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="relative aspect-[4/3] w-full min-h-0">
+                <div className={`absolute inset-0 flex ${reviewVisible ? "pointer-events-none opacity-0" : ""}`}>
                   {showTutorial ? (
                     <section
-                      className="flex-1 rounded-2xl bg-slate-900/60 overflow-hidden relative min-h-0"
+                      className="h-full w-full rounded-2xl bg-slate-900/60 overflow-hidden relative"
                     />
                   ) : (
                     <WebcamView
