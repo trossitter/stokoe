@@ -15,7 +15,7 @@ type GestureState = { gesture: Gesture | null; dwellProgress: number };
 
 const IDLE_GESTURE: GestureState = { gesture: null, dwellProgress: 0 };
 
-function isThumbsUp(lm: NormalizedLandmark[]): boolean {
+export function isThumbsUp(lm: NormalizedLandmark[]): boolean {
   const thumbUp = lm[4].y < lm[2].y - THRESHOLDS.thumbUpLift;
   const indexCurled = lm[8].y > lm[6].y;
   const middleCurled = lm[12].y > lm[10].y;
@@ -24,7 +24,7 @@ function isThumbsUp(lm: NormalizedLandmark[]): boolean {
   return thumbUp && indexCurled && middleCurled && ringCurled && pinkyCurled;
 }
 
-function isOpenFive(lm: NormalizedLandmark[]): boolean {
+export function isOpenFive(lm: NormalizedLandmark[]): boolean {
   const indexOpen = lm[8].y < lm[5].y - THRESHOLDS.fingerExtend;
   const middleOpen = lm[12].y < lm[9].y - THRESHOLDS.fingerExtend;
   const ringOpen = lm[16].y < lm[13].y - THRESHOLDS.fingerExtend;
