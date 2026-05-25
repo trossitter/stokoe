@@ -54,6 +54,9 @@ export default function App() {
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
+  const [forceOnboarding, setForceOnboarding] = useState(
+    () => new URLSearchParams(location.search).has("onboarding")
+  );
 
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
@@ -67,6 +70,7 @@ export default function App() {
   const handleTutorialComplete = useCallback(() => {
     if (!profile) return;
     setProfile(markTutorialDone(profile));
+    setForceOnboarding(false);
   }, [profile]);
 
   const handleFramesReady = useCallback(
@@ -132,7 +136,7 @@ export default function App() {
 
   if (!profile) return <LoginScreen onLogin={handleLogin} />;
 
-  const showTutorial = !profile.tutorialDone;
+  const showTutorial = !profile.tutorialDone || forceOnboarding;
 
   const displayState: "idle" | "recording" | "evaluating" | "result" =
     sessionState === "idle" ? "idle" :
@@ -173,7 +177,7 @@ export default function App() {
           />
           <WebcamView
             videoRef={videoRef}
-            sessionState={showTutorial ? "evaluating" : displayState}
+            sessionState={showTutorial ? "idle" : displayState}
             onFramesReady={handleFramesReady}
             overlay={
               swipeFlash

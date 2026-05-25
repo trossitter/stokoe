@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./onboarding.css";
 import { Carousel } from "./Carousel";
 import { PanelWelcome } from "./panels/PanelWelcome";
@@ -7,6 +7,7 @@ import { PanelFeedback } from "./panels/PanelFeedback";
 import { PanelPermission } from "./panels/PanelPermission";
 import { PanelFraming } from "./panels/PanelFraming";
 import { PanelBegin } from "./panels/PanelBegin";
+import { useHandSwipe } from "../../hooks/useHandSwipe";
 
 type Props = {
   onComplete: () => void;
@@ -21,6 +22,20 @@ export function Onboarding({ onComplete }: Props) {
   const [framingReady, setFramingReady] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [handoff, setHandoff] = useState(false);
+
+  // Hidden video element feeds the hand-swipe detector once camera is open
+  const hiddenVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const vid = hiddenVideoRef.current;
+    if (!vid) return;
+    if (stream) {
+      vid.srcObject = stream;
+      vid.play().catch(() => {});
+    } else {
+      vid.srcObject = null;
+    }
+  }, [stream]);
 
   const requestCamera = useCallback(async () => {
     setCamError(null);
@@ -55,23 +70,28 @@ export function Onboarding({ onComplete }: Props) {
     }, 1800);
   }, [stream, onComplete]);
 
-  // Gating: cannot advance past permission without stream, cannot advance past framing without ready
   const gatedSetIndex = useCallback((updater: (i: number) => number) => {
-    setIndex((current) => {
-      const next = updater(current);
-      if (next > current) {
-        if (current === 3 && !stream) return current;
-        if (current === 4 && !framingReady) return current;
-      }
-      return Math.max(0, Math.min(COUNT - 1, next));
-    });
-  }, [stream, framingReady]);
+    setIndex((current) => Math.max(0, Math.min(COUNT - 1, updater(current))));
+  }, []);
+
+  // Hand-swipe navigation — active only once camera is open, disabled on final panel
+  const swipeEnabled = !!stream && !exiting && index < COUNT - 1;
+  useHandSwipe(
+    hiddenVideoRef,
+    swipeEnabled,
+    () => gatedSetIndex((i) => i + 1),
+    () => gatedSetIndex((i) => i - 1),
+  );
 
   const carouselLocked = index === COUNT - 1;
   const canBack = index > 0 && !exiting;
-  const canFwd = index < COUNT - 1 && !exiting
-    && !(index === 3 && !stream)
-    && !(index === 4 && !framingReady);
+  const canFwd = index < COUNT - 1 && !exiting;
+
+  const hintText = index === COUNT - 1
+    ? "Drag the knob to begin"
+    : stream
+    ? "← swipe your hand · drag · arrows →"
+    : "Drag · arrows →";
 
   const pips = Array.from({ length: COUNT }, (_, i) => (
     <span key={i} className={`ob-pip${i === index ? " on" : ""}`} />
@@ -79,6 +99,9 @@ export function Onboarding({ onComplete }: Props) {
 
   return (
     <div className="ob-root">
+      {/* Hidden video — feeds MediaPipe hand swipe detection once stream is live */}
+      <video ref={hiddenVideoRef} style={{ display: "none" }} muted playsInline />
+
       <Carousel
         index={index}
         setIndex={gatedSetIndex}
@@ -101,7 +124,7 @@ export function Onboarding({ onComplete }: Props) {
           onReady={() => setFramingReady(true)}
           ready={framingReady}
         />
-        <PanelBegin onCommit={handleBegin} />
+        <PanelBegin onCommit={handleBegin} active={index === 5} />
       </Carousel>
 
       {/* Top chrome */}
@@ -123,11 +146,9 @@ export function Onboarding({ onComplete }: Props) {
         <div className="ob-lightline-head" style={{ left: `${(index / (COUNT - 1)) * 100}%` }} />
       </div>
 
-      {/* Bottom hint */}
+      {/* Bottom hint — updates once hand swipe is active */}
       <div className="ob-hint">
-        <span>
-          {index === COUNT - 1 ? "Drag the knob to begin" : "Drag · arrows · scroll →"}
-        </span>
+        <span>{hintText}</span>
         <div className="ob-navhint">
           <button
             className="ob-navbtn"

@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
   onCommit: () => void;
+  active?: boolean;
   label?: string;
   finishedLabel?: string;
 };
 
-export function SwipeTrack({ onCommit, label = "Swipe to begin", finishedLabel = "Ready" }: Props) {
+export function SwipeTrack({ onCommit, active = true, label = "Swipe to begin", finishedLabel = "Ready" }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const knobRef = useRef<HTMLDivElement>(null);
   const [x, setX] = useState(0);
@@ -60,7 +61,7 @@ export function SwipeTrack({ onCommit, label = "Swipe to begin", finishedLabel =
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (armed) return;
+      if (!active || armed) return;
       if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight") {
         e.preventDefault();
         setX(1);
@@ -70,7 +71,7 @@ export function SwipeTrack({ onCommit, label = "Swipe to begin", finishedLabel =
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [armed, onCommit]);
+  }, [active, armed, onCommit]);
 
   return (
     <div

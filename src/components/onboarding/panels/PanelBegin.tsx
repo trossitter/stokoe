@@ -3,9 +3,10 @@ import { SwipeTrack } from "../SwipeTrack";
 
 type Props = {
   onCommit: () => void;
+  active?: boolean;
 };
 
-export function PanelBegin({ onCommit }: Props) {
+export function PanelBegin({ onCommit, active = false }: Props) {
   return (
     <section className="ob-panel">
       <MoteField density={0.7} />
@@ -13,7 +14,7 @@ export function PanelBegin({ onCommit }: Props) {
         <h2 className="ob-h-mega" style={{ maxWidth: "16ch", marginBottom: 64 }}>
           Knowledge is <span className="ob-it">power.</span>
         </h2>
-        <SwipeTrack onCommit={onCommit} label="Swipe to begin" finishedLabel="Beginning" />
+        <SwipeTrack onCommit={onCommit} active={active} label="Swipe to begin" finishedLabel="Beginning" />
         <div className="ob-micro" style={{ marginTop: 28 }}>
           Or press <span style={{ color: "var(--fg-mute)" }}>Space</span> · <span style={{ color: "var(--fg-mute)" }}>Enter</span>
         </div>
