@@ -1,6 +1,7 @@
 type Props = {
   gesture: "next" | "retry" | null;
   dwellProgress: number;
+  displayState: "idle" | "result";
 };
 
 const chipBase: React.CSSProperties = {
@@ -23,7 +24,21 @@ const chipActive: React.CSSProperties = {
   color: "oklch(0.94 0.042 85)",
 };
 
-export function GestureHint({ gesture, dwellProgress }: Props) {
+const chipPassiveIdle: React.CSSProperties = {
+  opacity: 0.42,
+};
+
+export function GestureHint({ gesture, dwellProgress, displayState }: Props) {
+  const isIdle = displayState === "idle";
+  const nextActive = gesture === "next";
+  const retryActive = gesture === "retry";
+  const retryLabel = isIdle ? "Record" : "Retry";
+  const chipStyle = (active: boolean): React.CSSProperties => ({
+    ...chipBase,
+    ...(isIdle && !active ? chipPassiveIdle : {}),
+    ...(active ? chipActive : {}),
+  });
+
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
       {/* Dwell cue — top edge, clear of playback controls and result feedback. */}
@@ -60,13 +75,13 @@ export function GestureHint({ gesture, dwellProgress }: Props) {
           gap: 8,
         }}
       >
-        <div style={{ ...chipBase, ...(gesture === "next" ? chipActive : {}) }}>
+        <div style={chipStyle(nextActive)}>
           <span>👍</span>
           <span>Next</span>
         </div>
-        <div style={{ ...chipBase, ...(gesture === "retry" ? chipActive : {}) }}>
+        <div style={chipStyle(retryActive)}>
           <span>✋</span>
-          <span>Retry</span>
+          <span>{retryLabel}</span>
         </div>
       </div>
     </div>

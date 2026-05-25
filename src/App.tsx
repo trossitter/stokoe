@@ -23,7 +23,6 @@ import { RecordingReview } from "./components/RecordingReview";
 
 type SessionState = "idle" | "recording" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app";
-const NUMBER_SIGN_IDS = new Set(["one", "two", "three", "four", "six", "seven", "eight", "nine"]);
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -245,14 +244,6 @@ export default function App() {
     resetPracticeState();
   }, [resetPracticeState]);
 
-  const handleDecideForMe = useCallback(() => {
-    const nonNumberIndices = VOCAB
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => !NUMBER_SIGN_IDS.has(item.id))
-      .map(({ index }) => index);
-    handleStartLesson(shuffle(nonNumberIndices).slice(0, 10));
-  }, [handleStartLesson]);
-
   const handleChangeLesson = useCallback(() => {
     setLessonOrder(null);
     resetPracticeState();
@@ -317,15 +308,31 @@ export default function App() {
     sessionState === "recording" ? "recording" :
     sessionState === "evaluating" ? "evaluating" : "result";
 
+  const handleGestureNext = useCallback(() => {
+    if (displayState === "result" || displayState === "idle") {
+      handleNext();
+    }
+  }, [displayState, handleNext]);
+
+  const handleGestureRetry = useCallback(() => {
+    if (displayState === "result") {
+      handleRetry();
+      return;
+    }
+    if (displayState === "idle") {
+      handleRecordAttempt();
+    }
+  }, [displayState, handleRecordAttempt, handleRetry]);
+
   // Single swipe: right = next sign, left = previous sign
   useHandSwipe(videoRef, !showTutorial && !showWordPicker && !practicePaused && sessionState === "result", handleSwipeNext, handleSwipePrev);
 
-  // Dwell gesture nav: thumbs-up = next, open-5 = retry (active only in result state)
+  // Dwell gesture nav: thumbs-up = next, open-5 = retry/record.
   const { gesture, dwellProgress } = useGestureNav(
     videoRef,
-    !showTutorial && !showWordPicker && !practicePaused && displayState === "result",
-    handleNext,
-    handleRetry,
+    !showTutorial && !showWordPicker && !practicePaused && (displayState === "result" || displayState === "idle"),
+    handleGestureNext,
+    handleGestureRetry,
   );
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -353,8 +360,8 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  const gestureHint = displayState === "result"
-    ? <GestureHint gesture={gesture} dwellProgress={dwellProgress} />
+  const gestureHint = displayState === "result" || displayState === "idle"
+    ? <GestureHint gesture={gesture} dwellProgress={dwellProgress} displayState={displayState} />
     : null;
   const reviewVisible = !showTutorial && !showWordPicker && displayState === "result" && !!lastRecordingUrl;
 
@@ -424,7 +431,6 @@ export default function App() {
             <WordPicker
               vocab={VOCAB}
               onStart={handleStartLesson}
-              onDecideForMe={handleDecideForMe}
             />
           </main>
         ) : (
@@ -479,7 +485,7 @@ export default function App() {
                               {gestureHint}
                             </>
                           )
-                          : null
+                          : gestureHint
                       }
                     />
                   )}
