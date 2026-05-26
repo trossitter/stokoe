@@ -161,6 +161,10 @@ function PromptFocusOverlay({
               <button
                 onClick={(event) => {
                   event.stopPropagation();
+                  if (sessionState === "result") {
+                    onRetry();
+                    return;
+                  }
                   onStart();
                 }}
                 className="rounded-md border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors hover:brightness-110"
@@ -170,7 +174,7 @@ function PromptFocusOverlay({
                   color: "oklch(0.18 0.024 260)",
                 }}
               >
-                Start signing
+                {hasAttempt ? "Record again" : "Record"}
               </button>
             )}
           </div>
@@ -186,6 +190,10 @@ function PromptFocusOverlay({
               <button
                 onClick={(event) => {
                   event.stopPropagation();
+                  if (sessionState === "result") {
+                    onRetry();
+                    return;
+                  }
                   onStart();
                 }}
                 className="mt-4 rounded-lg border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:brightness-110"
@@ -195,7 +203,7 @@ function PromptFocusOverlay({
                   color: "oklch(0.18 0.024 260)",
                 }}
               >
-                Start signing
+                {hasAttempt ? "Record again" : "Record"}
               </button>
             )}
           </div>
@@ -651,8 +659,10 @@ export default function App() {
                 paused={practicePaused}
                 sessionState={displayState}
                 docked={promptDocked}
+                hasAttempt={!!lastRecordingUrl}
                 onDockToggle={() => setPromptDocked((docked) => !docked)}
                 onStart={handlePracticePauseToggle}
+                onRetry={handleRetry}
               />
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="relative aspect-[4/3] w-full min-h-0">
