@@ -1,4 +1,4 @@
-export type NarrativeEntryStatus = "verified" | "constructed";
+export type NarrativeEntryStatus = "verified" | "constructed" | "sourced";
 
 export type NarrativeEntry = {
   beat: string;
@@ -18,6 +18,49 @@ export type NarrativePassage = {
 };
 
 export const NARRATIVE_PASSAGES: NarrativePassage[] = [
+  {
+    id: "goldilocks",
+    title: "Goldilocks & the Three Bears",
+    subtitle: "Sourced corpus passage",
+    summary: "A story begins with three bears, deep woods, a house, and a book to read.",
+    entries: [
+      {
+        beat: "1",
+        gloss: "STORY",
+        status: "sourced",
+        ascii: "BɑBɑz~",
+        description: "Neutral space, bilateral flat-B handshape, wrist-oscillate.",
+      },
+      {
+        beat: "2",
+        gloss: "THREE BEARS",
+        status: "sourced",
+        ascii: "[]√C‡√Cv ×•",
+        description: "Bilateral curved-C handshape, contact, repeated.",
+      },
+      {
+        beat: "3",
+        gloss: "DEEP WOODS",
+        status: "sourced",
+        ascii: "Bɑ√Bʌω",
+        description: "Neutral to upper space, flat-B handshape, loose-wiggle.",
+      },
+      {
+        beat: "4",
+        gloss: "HOUSE",
+        status: "sourced",
+        ascii: "BʌˡBʌ÷",
+        description: "Upper space, bilateral B-hands, repeated contact.",
+      },
+      {
+        beat: "5",
+        gloss: "READ",
+        status: "sourced",
+        ascii: "B⊤Vɒv•",
+        description: "Overhead, V-hand over flat palm, downward brush.",
+      },
+    ],
+  },
   {
     id: "red-riding-hood",
     title: "Little Red Riding Hood",

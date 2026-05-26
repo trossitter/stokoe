@@ -353,6 +353,17 @@ export default function App() {
     resetPracticeState();
   }, [resetPracticeState]);
 
+  const handlePracticeSignFromNotation = useCallback((id: string) => {
+    const index = VOCAB.findIndex((entry) => entry.id === id);
+    if (index === -1) return;
+
+    setAppPhase("app");
+    setActiveView("practice");
+    setBonusVocab([]);
+    setLessonOrder([index]);
+    resetPracticeState();
+  }, [resetPracticeState]);
+
   const handleChangeLesson = useCallback(() => {
     setAppPhase("app");
     setActiveView("practice");
@@ -629,7 +640,7 @@ export default function App() {
           <main className="flex-1 min-h-0 overflow-hidden p-3" aria-hidden="true" />
         ) : showNotationLab ? (
           <main className="flex-1 min-h-0 overflow-hidden p-3">
-            <NotationLab vocab={VOCAB} />
+            <NotationLab vocab={VOCAB} onPracticeSign={handlePracticeSignFromNotation} />
           </main>
         ) : showWordPicker ? (
           <main className="flex-1 min-h-0 overflow-hidden p-3">
