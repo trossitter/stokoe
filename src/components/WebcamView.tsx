@@ -20,7 +20,6 @@ type Props = {
   onRecordingReady: (url: string) => void;
   onRecordingFramesReady?: (frames: string[]) => void;
   onToggleHidden: () => void;
-  showToggleButton?: boolean;
   overlay?: React.ReactNode;
 };
 
@@ -56,7 +55,7 @@ function SelfViewToggleButton({
         event.stopPropagation();
         onToggleHidden();
       }}
-      className="absolute bottom-3 right-3 z-50 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      className="absolute bottom-3 right-3 z-20 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
       aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       {hidden ? "Show" : "Hide"}
@@ -75,7 +74,6 @@ export function WebcamView({
   onRecordingReady,
   onRecordingFramesReady,
   onToggleHidden,
-  showToggleButton = true,
   overlay,
 }: Props) {
   const onRecordingReadyRef = useRef(onRecordingReady);
@@ -320,9 +318,7 @@ export function WebcamView({
           REC
         </div>
       )}
-      {showToggleButton && (
-        <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
-      )}
+      <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
       {recordingCueState === "countdown" && (
         <div
           className="absolute inset-0 z-30 flex items-center justify-center rounded-[28px] pointer-events-none"

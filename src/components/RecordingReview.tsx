@@ -9,7 +9,6 @@ type Props = {
   paused?: boolean;
   hidden?: boolean;
   onToggleHidden: () => void;
-  showToggleButton?: boolean;
   overlay?: ReactNode;
 };
 
@@ -27,7 +26,7 @@ function SelfViewToggleButton({
         event.stopPropagation();
         onToggleHidden();
       }}
-      className="absolute bottom-3 right-3 z-50 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      className="absolute bottom-3 right-3 z-20 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
       aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       {hidden ? "Show" : "Hide"}
@@ -71,7 +70,6 @@ export function RecordingReview({
   paused: practicePaused = false,
   hidden = false,
   onToggleHidden,
-  showToggleButton = true,
   overlay,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -282,9 +280,7 @@ export function RecordingReview({
         </div>
       </>
       )}
-      {showToggleButton && (
-        <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
-      )}
+      <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
       {overlay}
     </section>
   );

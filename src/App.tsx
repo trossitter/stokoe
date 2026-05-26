@@ -571,10 +571,9 @@ export default function App() {
         ) : gestureHint}
         {gestureConfirmationOverlay}
       </>
-    );
+  );
   const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && (!!lastRecordingUrl || lastRecordingFrames.length > 0);
   const gestureTooltipVisible = displayState === "result" && !showTutorial && !showWordPicker;
-  const selfViewToggleVisible = promptDocked || displayState === "recording" || displayState === "evaluating";
 
   return (
     <div
@@ -713,7 +712,6 @@ export default function App() {
                       onRecordingReady={handleRecordingReady}
                       onRecordingFramesReady={handleRecordingFramesReady}
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
-                      showToggleButton={selfViewToggleVisible}
                       overlay={practiceOverlay}
                     />
                   )}
@@ -726,7 +724,6 @@ export default function App() {
                       paused={practicePaused}
                       hidden={userVideoHidden}
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
-                      showToggleButton={selfViewToggleVisible}
                       overlay={
                         <>
                           {gestureHint}
