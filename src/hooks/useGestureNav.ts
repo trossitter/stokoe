@@ -4,9 +4,9 @@ import { getHandLandmarker } from "../model/handLandmarker";
 
 const THRESHOLDS = {
   thumbUpLift: 0.08,
-  fingerExtend: 0.06,
-  thumbExtend: 0.04,
-  dwellMs: 900,
+  fingerExtend: 0.09,
+  thumbExtend: 0.06,
+  dwellMs: 1400,
   lockoutMs: 1500,
 };
 

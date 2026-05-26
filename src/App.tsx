@@ -13,15 +13,19 @@ import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { SignVideo } from "./components/SignVideo";
 import { WordPicker } from "./components/WordPicker";
+import { NotationLab } from "./components/NotationLab";
 import { LoginScreen } from "./components/LoginScreen";
 import { WelcomeSplash } from "./components/WelcomeSplash";
 import { Onboarding } from "./components/onboarding/Onboarding";
 import { CameraHint } from "./components/CameraHint";
 import { MoteField } from "./components/onboarding/MoteField";
 import { RecordingReview } from "./components/RecordingReview";
+import { BonusRound } from "./components/BonusRound";
+import { GestureTooltip } from "./components/GestureTooltip";
 
 type SessionState = "idle" | "recording" | "evaluating" | "result";
-type AppPhase = "login" | "login-exit" | "splash" | "app";
+type AppPhase = "login" | "login-exit" | "splash" | "app" | "bonus";
+type AppView = "practice" | "notation";
 type GestureConfirmation = "Skip" | "Next" | "Record" | "Retry";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -201,6 +205,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
   const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? "app" : "login");
+  const [activeView, setActiveView] = useState<AppView>("practice");
   const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
   const [lessonOrder, setLessonOrder] = useState<number[] | null>(null);
   const [vocabIndex, setVocabIndex] = useState(0);
@@ -218,6 +223,7 @@ export default function App() {
   const [promptDocked, setPromptDocked] = useState(false);
   const [gestureConfirmation, setGestureConfirmation] = useState<GestureConfirmation | null>(null);
   const [recordRequestId, setRecordRequestId] = useState(0);
+  const [bonusVocab, setBonusVocab] = useState<VocabItem[]>([]);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => new URLSearchParams(location.search).has("onboarding")
   );
@@ -229,7 +235,10 @@ export default function App() {
   const activeOrder = lessonOrder ?? order;
   const item = VOCAB[activeOrder[vocabIndex % activeOrder.length]];
   const showTutorial = profile ? !profile.tutorialDone || forceOnboarding : false;
-  const showWordPicker = !!profile && !showTutorial && lessonOrder === null;
+  const notationAvailable = !!profile?.tutorialDone && !showTutorial;
+  const currentView: AppView = notationAvailable ? activeView : "practice";
+  const showNotationLab = notationAvailable && currentView === "notation";
+  const showWordPicker = !!profile && !showTutorial && currentView === "practice" && lessonOrder === null;
 
   const handleLogin = (name: string, powerUser: boolean) => {
     const saved = saveProfile(name, powerUser);
@@ -325,20 +334,38 @@ export default function App() {
 
   const handleStartLesson = useCallback((indices: number[]) => {
     if (indices.length === 0) return;
+    setAppPhase("app");
     setLessonOrder(indices);
     resetPracticeState();
   }, [resetPracticeState]);
 
   const handleChangeLesson = useCallback(() => {
+    setAppPhase("app");
+    setActiveView("practice");
     setLessonOrder(null);
+    setBonusVocab([]);
     resetPracticeState();
   }, [resetPracticeState]);
 
+  const handleBonusExit = useCallback(() => {
+    handleChangeLesson();
+  }, [handleChangeLesson]);
+
   const handleOnboardingRefresh = useCallback(() => {
+    setActiveView("practice");
     resetPracticeState();
     setForceOnboarding(false);
     window.setTimeout(() => setForceOnboarding(true), 0);
   }, [resetPracticeState]);
+
+  const handleOpenPractice = useCallback(() => {
+    setActiveView("practice");
+  }, []);
+
+  const handleOpenNotation = useCallback(() => {
+    setActiveView("notation");
+    setPracticePaused(true);
+  }, []);
 
   const handlePracticePauseToggle = useCallback(() => {
     if (practicePaused) {
@@ -361,11 +388,29 @@ export default function App() {
     setRecordRequestId((id) => id + 1);
   }, [practicePaused, practiceStarted, sessionState]);
 
-  const handleNext = useCallback(() => {
-    setVocabIndex((i) => i + 1);
+  const startBonusRound = useCallback(() => {
+    const sessionIndices = lessonOrder ?? activeOrder;
+    const sessionItems = sessionIndices
+      .map((index) => VOCAB[index])
+      .filter((entry): entry is VocabItem => !!entry);
+
+    setBonusVocab(sessionItems);
+    resetPracticeState();
+    setPracticePaused(true);
+    setAppPhase("bonus");
+  }, [activeOrder, lessonOrder, resetPracticeState]);
+
+  const handleNext = useCallback(({ afterAttempt = false }: { afterAttempt?: boolean } = {}) => {
+    const nextIndex = vocabIndex + 1;
+    if (afterAttempt && lessonOrder && nextIndex >= activeOrder.length) {
+      startBonusRound();
+      return;
+    }
+
+    setVocabIndex(nextIndex);
     setPassed(null); setConfidence(null); setHintKey(null);
     setSessionState("idle");
-  }, []);
+  }, [activeOrder.length, lessonOrder, startBonusRound, vocabIndex]);
 
   const handlePrev = useCallback(() => {
     setVocabIndex((i) => Math.max(0, i - 1));
@@ -385,7 +430,7 @@ export default function App() {
     setTimeout(() => { setSwipeFlash(null); action(); }, 300);
   }, []);
 
-  const handleSwipeNext = useCallback(() => flashThen("right", handleNext), [flashThen, handleNext]);
+  const handleSwipeNext = useCallback(() => flashThen("right", () => handleNext({ afterAttempt: true })), [flashThen, handleNext]);
   const handleSwipePrev = useCallback(() => flashThen("left", handlePrev), [flashThen, handlePrev]);
 
   const displayState: "idle" | "recording" | "evaluating" | "result" =
@@ -396,7 +441,7 @@ export default function App() {
   const handleGestureNext = useCallback(() => {
     if (displayState === "result") {
       showGestureConfirmation("Next");
-      handleNext();
+      handleNext({ afterAttempt: true });
       return;
     }
     if (displayState === "idle") {
@@ -418,18 +463,18 @@ export default function App() {
   }, [displayState, handleRecordAttempt, handleRetry, showGestureConfirmation]);
 
   // Single swipe: right = next sign, left = previous sign
-  useHandSwipe(videoRef, !showTutorial && !showWordPicker && !practicePaused && sessionState === "result", handleSwipeNext, handleSwipePrev);
+  useHandSwipe(videoRef, currentView === "practice" && !showTutorial && !showWordPicker && !practicePaused && sessionState === "result", handleSwipeNext, handleSwipePrev);
 
   // Dwell gesture nav: thumbs-up = next, open-5 = retry/record.
   const { gesture, dwellProgress } = useGestureNav(
     videoRef,
-    !showTutorial && !showWordPicker && !practicePaused && (displayState === "result" || displayState === "idle"),
+    currentView === "practice" && !showTutorial && !showWordPicker && !practicePaused && (displayState === "result" || displayState === "idle"),
     handleGestureNext,
     handleGestureRetry,
   );
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (sessionState !== "result") return;
+    if (currentView !== "practice" || sessionState !== "result") return;
     pointerStartX.current = e.clientX;
   };
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -453,6 +498,16 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
+  if (appPhase === "bonus") {
+    return (
+      <BonusRound
+        sessionVocab={bonusVocab}
+        allVocab={VOCAB}
+        onExit={handleBonusExit}
+      />
+    );
+  }
+
   const gestureHint = displayState === "result" || displayState === "idle"
     ? <GestureHint gesture={gesture} dwellProgress={dwellProgress} displayState={displayState} />
     : null;
@@ -472,7 +527,8 @@ export default function App() {
         {gestureConfirmationOverlay}
       </>
     );
-  const reviewVisible = !showTutorial && !showWordPicker && displayState === "result" && !!lastRecordingUrl;
+  const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && !!lastRecordingUrl;
+  const gestureTooltipVisible = displayState === "result" && !showTutorial && !showWordPicker;
 
   return (
     <div
@@ -504,18 +560,38 @@ export default function App() {
               <h1 className="text-base font-bold text-slate-100 tracking-tight">Stokoe</h1>
             </button>
             <span className="text-xs text-slate-400">ASL 1 practice</span>
+            {notationAvailable && (
+              <nav className="ml-2 flex rounded-lg border border-slate-700/70 bg-slate-950/20 p-1">
+                <button
+                  type="button"
+                  onClick={handleOpenPractice}
+                  className="rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                  style={{
+                    background: currentView === "practice" ? "oklch(0.94 0.042 85 / 0.14)" : "transparent",
+                    color: currentView === "practice" ? "oklch(0.94 0.042 85)" : "rgb(148 163 184)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Practice
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenNotation}
+                  className="rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                  style={{
+                    background: currentView === "notation" ? "oklch(0.94 0.042 85 / 0.14)" : "transparent",
+                    color: currentView === "notation" ? "oklch(0.94 0.042 85)" : "rgb(148 163 184)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Notation
+                </button>
+              </nav>
+            )}
           </div>
           <div className="flex items-center gap-3">
-            {!showWordPicker && !showTutorial && (
+            {currentView === "practice" && !showWordPicker && !showTutorial && (
               <>
-                {practiceStarted && !practicePaused && (
-                  <button
-                    onClick={handlePracticePauseToggle}
-                    className="text-xs text-slate-400 transition-colors px-2 py-1 rounded-md hover:bg-slate-800/70 hover:text-slate-200"
-                  >
-                    Pause
-                  </button>
-                )}
                 <button
                   onClick={handleChangeLesson}
                   className="text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 rounded-md hover:bg-slate-800/70"
@@ -535,6 +611,10 @@ export default function App() {
 
         {showTutorial ? (
           <main className="flex-1 min-h-0 overflow-hidden p-3" aria-hidden="true" />
+        ) : showNotationLab ? (
+          <main className="flex-1 min-h-0 overflow-hidden p-3">
+            <NotationLab vocab={VOCAB} />
+          </main>
         ) : showWordPicker ? (
           <main className="flex-1 min-h-0 overflow-hidden p-3">
             <WordPicker
@@ -549,7 +629,7 @@ export default function App() {
               record={progress[item.id]}
               sessionState={displayState}
               onRecord={handleRecordAttempt}
-              onNext={handleNext}
+              onNext={() => handleNext({ afterAttempt: true })}
               onRetry={handleRetry}
               passed={passed}
               vocabIndex={vocabIndex % activeOrder.length}
@@ -583,6 +663,7 @@ export default function App() {
                       recordRequestId={recordRequestId}
                       onFramesReady={handleFramesReady}
                       onRecordingReady={handleRecordingReady}
+                      onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
                       overlay={practiceOverlay}
                     />
                   )}
@@ -592,7 +673,8 @@ export default function App() {
                     <RecordingReview
                       url={lastRecordingUrl}
                       paused={practicePaused}
-                      hidden={false}
+                      hidden={userVideoHidden}
+                      onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
                       overlay={
                         <>
                           {gestureHint}
@@ -602,13 +684,8 @@ export default function App() {
                     />
                   </div>
                 )}
+                <GestureTooltip visible={gestureTooltipVisible} />
                 </div>
-                <button
-                  onClick={() => setUserVideoHidden((hidden) => !hidden)}
-                  className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 whitespace-nowrap"
-                >
-                  {userVideoHidden ? "Show self-view" : "Hide self-view"}
-                </button>
               </div>
               <SignVideo
                 item={item}
