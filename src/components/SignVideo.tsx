@@ -73,6 +73,36 @@ function ReferenceToggleButton({
   );
 }
 
+function SpeedStepButton({
+  direction,
+  disabled,
+  label,
+  onClick,
+}: {
+  direction: "slower" | "faster";
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      disabled={disabled}
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-black/70 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent"
+      aria-label={label}
+    >
+      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 8h10" strokeLinecap="round" />
+        {direction === "faster" && <path d="M8 3v10" strokeLinecap="round" />}
+      </svg>
+    </button>
+  );
+}
+
 function Placeholder({ word, reason }: { word: string; reason: "missing" | "error" }) {
   return (
     <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-1 bg-slate-800/60 rounded-[28px] border border-slate-700">
@@ -162,6 +192,17 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
   };
 
   const speedIndex = SPEED_STEPS.indexOf(speed);
+  const currentSpeedIndex = speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex;
+  const stepSpeed = (direction: "slower" | "faster") => {
+    setSpeed((current) => {
+      const index = SPEED_STEPS.indexOf(current);
+      const safeIndex = index === -1 ? SPEED_STEPS.length - 1 : index;
+      const nextIndex = direction === "slower"
+        ? Math.max(0, safeIndex - 1)
+        : Math.min(SPEED_STEPS.length - 1, safeIndex + 1);
+      return SPEED_STEPS[nextIndex];
+    });
+  };
   const notation = NOTATION[item.id];
 
   return (
@@ -236,16 +277,28 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
             onClick={(event) => event.stopPropagation()}
           >
             <span className="text-[10px] uppercase tracking-[0.12em] text-white/55">Speed</span>
+            <SpeedStepButton
+              direction="slower"
+              disabled={currentSpeedIndex === 0}
+              label="Slow reference playback"
+              onClick={() => stepSpeed("slower")}
+            />
             <input
               type="range"
               min={0}
               max={SPEED_STEPS.length - 1}
               step={1}
-              value={speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex}
+              value={currentSpeedIndex}
               onClick={(event) => event.stopPropagation()}
               onChange={handleSpeedChange}
               className="h-1 min-w-0 flex-1 cursor-pointer accent-slate-200"
               aria-label="Playback speed"
+            />
+            <SpeedStepButton
+              direction="faster"
+              disabled={currentSpeedIndex === SPEED_STEPS.length - 1}
+              label="Speed up reference playback"
+              onClick={() => stepSpeed("faster")}
             />
             <span className="w-7 text-right text-[10px] text-white/70">
               {speed}×

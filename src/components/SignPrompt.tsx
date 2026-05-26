@@ -74,10 +74,10 @@ export function SignPrompt({
       {!(sessionState === "idle" && paused) && (
       <div className="mt-4 flex gap-2 min-h-[48px]">
         {sessionState === "idle" && !paused && (
-            <div className="flex-1 flex flex-col gap-1.5">
+            <div className="flex-1">
               <button
                 onClick={onRecord}
-                className="py-3 rounded-xl border text-sm font-medium transition-colors"
+                className="w-full py-3 rounded-xl border text-sm font-medium transition-colors"
                 style={{
                   background: "oklch(0.94 0.042 85)",
                   borderColor: "oklch(0.94 0.042 85)",
@@ -86,9 +86,6 @@ export function SignPrompt({
               >
                 Record attempt
               </button>
-              <p className="text-center text-xs text-slate-500">
-                You will get a short cue before capture starts.
-              </p>
             </div>
         )}
         {sessionState === "recording" && (
@@ -112,9 +109,14 @@ export function SignPrompt({
               </button>
               <button
                 onClick={onNext}
-                className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-950 text-sm font-medium hover:bg-white transition-colors"
+                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors hover:brightness-110"
+                style={{
+                  background: "oklch(0.94 0.042 85)",
+                  borderColor: "oklch(0.94 0.042 85)",
+                  color: "oklch(0.18 0.024 260)",
+                }}
               >
-                Next sign →
+                Next →
               </button>
             </div>
             <p className="text-center text-xs text-slate-500">← swipe your hand to navigate →</p>

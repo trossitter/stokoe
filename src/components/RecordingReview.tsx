@@ -6,10 +6,69 @@ type Props = {
   url: string;
   paused?: boolean;
   hidden?: boolean;
+  onToggleHidden: () => void;
   overlay?: ReactNode;
 };
 
-export function RecordingReview({ url, paused: practicePaused = false, hidden = false, overlay }: Props) {
+function SelfViewToggleButton({
+  hidden,
+  onToggleHidden,
+}: {
+  hidden: boolean;
+  onToggleHidden: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleHidden();
+      }}
+      className="absolute bottom-3 right-3 z-30 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      aria-label={hidden ? "Show self-view" : "Hide self-view"}
+    >
+      {hidden ? "Show" : "Hide"}
+    </button>
+  );
+}
+
+function SpeedStepButton({
+  direction,
+  disabled,
+  label,
+  onClick,
+}: {
+  direction: "slower" | "faster";
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      disabled={disabled}
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-black/70 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent"
+      aria-label={label}
+    >
+      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 8h10" strokeLinecap="round" />
+        {direction === "faster" && <path d="M8 3v10" strokeLinecap="round" />}
+      </svg>
+    </button>
+  );
+}
+
+export function RecordingReview({
+  url,
+  paused: practicePaused = false,
+  hidden = false,
+  onToggleHidden,
+  overlay,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1.0);
@@ -43,15 +102,37 @@ export function RecordingReview({ url, paused: practicePaused = false, hidden = 
     const index = Number(event.target.value);
     setSpeed(SPEED_STEPS[index]);
   };
+  const currentSpeedIndex = speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex;
+  const stepSpeed = (direction: "slower" | "faster") => {
+    setSpeed((current) => {
+      const index = SPEED_STEPS.indexOf(current);
+      const safeIndex = index === -1 ? SPEED_STEPS.length - 1 : index;
+      const nextIndex = direction === "slower"
+        ? Math.max(0, safeIndex - 1)
+        : Math.min(SPEED_STEPS.length - 1, safeIndex + 1);
+      return SPEED_STEPS[nextIndex];
+    });
+  };
 
   return (
     <section
+      role="button"
+      tabIndex={0}
+      onClick={onToggleHidden}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggleHidden();
+        }
+      }}
       className="h-full w-full relative overflow-hidden rounded-[28px] border border-slate-700/60"
       style={{
         background: "oklch(0.12 0.02 260)",
         boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)",
       }}
+      aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
+      <span className="absolute left-5 top-4 z-20 text-xs font-medium text-slate-300">Your attempt</span>
       <video
         key={url}
         ref={videoRef}
@@ -89,10 +170,13 @@ export function RecordingReview({ url, paused: practicePaused = false, hidden = 
       )}
 
       {!hidden && (
-      <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-md border border-white/10 bg-black/50 px-2 py-1 text-white backdrop-blur">
+      <>
         <button
-          onClick={handlePlayPause}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-black/70"
+          onClick={(event) => {
+            event.stopPropagation();
+            handlePlayPause();
+          }}
+          className="absolute bottom-3 left-3 z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-black/70"
           style={{ background: "rgba(0,0,0,0.5)" }}
           aria-label={paused ? "Play your attempt" : "Pause your attempt"}
         >
@@ -106,36 +190,40 @@ export function RecordingReview({ url, paused: practicePaused = false, hidden = 
             </svg>
           )}
         </button>
-        <input
-          type="range"
-          min={0}
-          max={SPEED_STEPS.length - 1}
-          step={1}
-          value={speedIndex === -1 ? SPEED_STEPS.length - 1 : speedIndex}
-          onChange={handleSpeedChange}
-          className="h-1 w-20 cursor-pointer accent-slate-200"
-          aria-label="Attempt playback speed"
-        />
-        <span className="w-7 text-right text-[10px] text-white/70">
-          {speed}×
-        </span>
-      </div>
+        <div
+          className="absolute bottom-3 left-12 right-20 z-20 flex h-8 items-center gap-2 rounded-md border border-white/10 bg-black/50 px-2 text-white backdrop-blur"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="text-[10px] uppercase tracking-[0.12em] text-white/55">Speed</span>
+          <SpeedStepButton
+            direction="slower"
+            disabled={currentSpeedIndex === 0}
+            label="Slow attempt playback"
+            onClick={() => stepSpeed("slower")}
+          />
+          <input
+            type="range"
+            min={0}
+            max={SPEED_STEPS.length - 1}
+            step={1}
+            value={currentSpeedIndex}
+            onChange={handleSpeedChange}
+            className="h-1 min-w-0 flex-1 cursor-pointer accent-slate-200"
+            aria-label="Attempt playback speed"
+          />
+          <SpeedStepButton
+            direction="faster"
+            disabled={currentSpeedIndex === SPEED_STEPS.length - 1}
+            label="Speed up attempt playback"
+            onClick={() => stepSpeed("faster")}
+          />
+          <span className="w-7 text-right text-[10px] text-white/70">
+            {speed}×
+          </span>
+        </div>
+      </>
       )}
-
-      {!hidden && (
-      <span
-        className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap"
-        style={{
-          color: "rgba(255,255,255,0.55)",
-          fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-          fontSize: 10,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}
-      >
-        Your attempt
-      </span>
-      )}
+      <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
       {overlay}
     </section>
   );

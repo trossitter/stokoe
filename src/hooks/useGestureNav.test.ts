@@ -15,9 +15,9 @@ import { detectGestureFromHands, isThumbsUp, isOpenFive } from "./useGestureNav"
 //   thumbUp:       lm[4].y < lm[2].y - 0.08
 //   fingerCurled:  tip.y   > pip.y
 //
-// isOpenFive thresholds: fingerExtend=0.06, thumbExtend=0.04
-//   fingerOpen:  tip.y  < mcp.y - 0.06
-//   thumbOpen:   lm[4].y < lm[2].y - 0.04
+// isOpenFive thresholds: fingerExtend=0.09, thumbExtend=0.06
+//   fingerOpen:  tip.y  < mcp.y - 0.09
+//   thumbOpen:   lm[4].y < lm[2].y - 0.06
 
 type LandmarkOverrides = Partial<Record<number, { x?: number; y: number; z?: number }>>;
 
@@ -51,7 +51,7 @@ function thumbsUpHand(): NormalizedLandmark[] {
 function openFiveHand(): NormalizedLandmark[] {
   return lm({
     2: { y: 0.5 },
-    4: { y: 0.44 },
+    4: { y: 0.43 },
     5: { y: 0.5 },
     8: { y: 0.40 },
     9: { y: 0.5 },
@@ -144,14 +144,14 @@ describe("isThumbsUp", () => {
 
 describe("isOpenFive", () => {
   // Base open-5: all tips well above their MCPs, thumb extended.
-  // fingerExtend=0.06: tip.y < mcp.y - 0.06
-  // thumbExtend=0.04: lm[4].y < lm[2].y - 0.04
+  // fingerExtend=0.09: tip.y < mcp.y - 0.09
+  // thumbExtend=0.06: lm[4].y < lm[2].y - 0.06
   //
-  // Set MCPs at 0.5, tips at 0.40 (0.10 gap > 0.06 threshold)
-  // Thumb: lm[2].y=0.5, lm[4].y=0.44 → 0.44 < 0.5-0.04=0.46  ✓
+  // Set MCPs at 0.5, tips at 0.40 (0.10 gap > 0.09 threshold)
+  // Thumb: lm[2].y=0.5, lm[4].y=0.43 -> 0.43 < 0.5-0.06=0.44
   const openFiveBase: LandmarkOverrides = {
     2: { y: 0.5 },   // thumb IP
-    4: { y: 0.44 },  // thumb tip (0.06 above lm[2], past 0.04 threshold)
+    4: { y: 0.43 },  // thumb tip (0.07 above lm[2], past 0.06 threshold)
     5: { y: 0.5 },   // index MCP
     8: { y: 0.40 },  // index tip
     9: { y: 0.5 },   // middle MCP

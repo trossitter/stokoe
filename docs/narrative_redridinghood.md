@@ -1,106 +1,32 @@
-# Little Red Riding Hood — Stokoe Notation Passage
-## Gloss-level ASL encoding
+# Little Red Riding Hood - Stokoe Notation Study
 
-**Format:** `[Stokoe ASCII notation]` / ENGLISH GLOSS / *parameter description*
+## Status
 
-Signs marked ✓ are from our verified training vocabulary (notation.ts).
-Signs marked ~ are approximated from the Stokoe symbol table; accurate at the parameter level, not sourced from a verified ASL corpus document.
+This is a cleaned draft for the Notation Lab. Verified rows should be pulled from `src/data/notation.ts`.
+Constructed with AI for practice. Please verify against a signed or published corpus before citation.
 
-**Stokoe notation order:** Tab – Dez – Sig (location, handshape, movement)
-
----
-
-### The Passage
-
-*"A girl with a red cloak walks through the forest to her grandmother's house. A wolf appears. She calls for help."*
+**Format:** Stokoe ASCII / gloss / status / reading note
 
 ---
 
-**Beat 1 — The girl and her mother**
+## Passage
 
-```
-U5Dx
-```
-MOTHER  
-*Chin location (U), spread-5 handshape, tap-contact (Dx)*  
-✓ from training vocabulary
+"A mother sends a child in a red cloak through the forest. A wolf appears; she calls for help."
 
-```
-[  ]BɑBɑv
-```
-GIVE / SEND  
-*Neutral space (ɑ), bilateral flat-B hands, arc forward (v)*  
-~ approximated
-
----
-
-**Beat 2 — The red cloak**
-
-```
-U1v
-```
-RED  
-*Chin/lips location (U), index-finger handshape (1), brush downward (v)*  
-✓ from training vocabulary
-
-```
-[  ]Bʌ√Bʌ×
-```
-WEAR / CLOAK  
-*Upper-space (ʌ), bilateral flat-B, contact across shoulders (×)*  
-~ approximated; follows pattern from Goldilocks corpus: `BʌˡBʌ÷` (bilateral B-hand contact)
+| Beat | Stokoe ASCII | Gloss | Status | Reading note |
+| --- | --- | --- | --- | --- |
+| 1 | `U5>Dx` | MOTHER | Verified | App canonical entry. Spread hand at chin, thumb taps. |
+| 1 | `0BaDf` | SEND / GIVE | Draft | Neutral-space flat hand moving forward, used as a transfer or send connector. |
+| 2 | `UGtDw` | RED | Verified | App canonical entry. Index finger at lips, brush down twice. |
+| 2 | `[ ]B>Dx` | CLOAK / WEAR | Draft | Torso location with flat hand contact, used as a compact clothing/shoulder cue. |
+| 3 | `05^Dz~` | FOREST / TREES | Draft | Open spread hands in neutral space, fingers up, alternating side motion. |
+| 4 | `}5tDx` | WOLF | Draft | Spread/claw handshape at the side of the face with contact. |
+| 4 | `0L>D%` | BIG | Verified | App canonical entry. Both L-hands move apart to show size. |
+| 5 | `0BaD^` | HELP | Verified | App canonical entry. Flat palm lifts fist upward. |
+| 5 | `0GfDt` | COME | Verified | App canonical entry. Index fingers arc inward. |
 
 ---
 
-**Beat 3 — The forest**
+## Lab Copy
 
-```
-P5z~
-```
-FOREST / TREES  
-*Forehead level (P), spread-5 handshape (trees branching upward), oscillating wrist motion (z~)*  
-~ approximated; `z~` = wrist-oscillate, from Goldilocks corpus `BɑBɑz~` (story/narrative)
-
----
-
-**Beat 4 — The wolf appears**
-
-```
-}5×
-```
-WOLF  
-*Cheek/temple location (}), spread-claw-5 handshape, contact at face (×)*  
-~ approximated; claw-hand at face = conventional ASL wolf classifier
-
-```
-0BIG
-```
-BIG  
-*Neutral space (0), bilateral L-hands, move apart*  
-✓ from training vocabulary (rendered as `0L<>` in ASCII-Stokoe)
-
----
-
-**Beat 5 — Danger and the call for help**
-
-```
-0A^B
-```
-HELP  
-*Neutral space (0), fist (A) on flat palm (B), lifts upward (^)*  
-✓ from training vocabulary
-
-```
-0Gv<
-```
-COME  
-*Neutral space (0), index-finger arc (G), inward toward body (v<)*  
-✓ from training vocabulary
-
----
-
-### Reading Note
-
-The Goldilocks passage (sourced from an existing Stokoe corpus document) established precedent that ASL narrative can be fully encoded in Stokoe notation. This Red Riding Hood passage extends that demonstration using the same symbol table (tab, dez, sig) for new narrative content. The ~ signs are constructed from first principles using the reference in `docs/stokoe_notation_reference.md` — they are phonologically accurate approximations, not yet verified against a native signer corpus.
-
-For demo purposes: the framework is real, the notation is genuine Stokoe, and the narrative is legible.
+Verified signs come from the app's own notation table. Draft signs are narrative connectors.

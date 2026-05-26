@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { captureFrame, useWebcam } from "../hooks/useWebcam";
 
 const ROI = { x: 0.12, y: 0.05, w: 0.76, h: 0.9 };
-const COUNTDOWN_MS = 1000;
+const COUNTDOWN_STEPS = 3;
+const COUNTDOWN_MS = 3000;
 const RECORD_DURATION_MS = 2200;
 const FRAME_INTERVAL_MS = 100;
 
@@ -15,30 +16,32 @@ type Props = {
   recordRequestId?: number;
   onFramesReady: (frames: ImageData[]) => void;
   onRecordingReady: (url: string) => void;
+  onToggleHidden: () => void;
   overlay?: React.ReactNode;
 };
 
 type RecordingCueState = "idle" | "countdown" | "recording";
 
-function drawRoundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-) {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + width - r, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-  ctx.lineTo(x + width, y + height - r);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-  ctx.lineTo(x + r, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+function SelfViewToggleButton({
+  hidden,
+  onToggleHidden,
+}: {
+  hidden: boolean;
+  onToggleHidden: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggleHidden();
+      }}
+      className="absolute right-3 top-3 z-40 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      aria-label={hidden ? "Show self-view" : "Hide self-view"}
+    >
+      {hidden ? "Show" : "Hide"}
+    </button>
+  );
 }
 
 export function WebcamView({
@@ -50,10 +53,9 @@ export function WebcamView({
   recordRequestId = 0,
   onFramesReady,
   onRecordingReady,
+  onToggleHidden,
   overlay,
 }: Props) {
-  const overlayRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
   const onRecordingReadyRef = useRef(onRecordingReady);
   const onFramesReadyRef = useRef(onFramesReady);
   const liveVideoRef = useRef(videoRef);
@@ -141,7 +143,7 @@ export function WebcamView({
           const url = URL.createObjectURL(blob);
           onRecordingReadyRef.current(url);
         };
-        recorder.start();
+        recorder.start(FRAME_INTERVAL_MS);
       }
 
       const grabFrame = () => {
@@ -200,93 +202,20 @@ export function WebcamView({
     };
   }, [cameraEnabled, paused, recordRequestId, sessionState, videoRef]);
 
-  // Draw ROI overlay
-  useEffect(() => {
-    const draw = () => {
-      const canvas = overlayRef.current;
-      if (!canvas) { rafRef.current = requestAnimationFrame(draw); return; }
-
-      const { offsetWidth: w, offsetHeight: h } = canvas.parentElement!;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.clearRect(0, 0, w, h);
-
-      const rx = ROI.x * w;
-      const ry = ROI.y * h;
-      const rw = ROI.w * w;
-      const rh = ROI.h * h;
-
-      const borderColor = paused ? "rgba(148,163,184,0.45)"
-                        : recordingCueState === "recording" ? "#ef4444"
-                        : recordingCueState === "countdown" ? "#f59e0b"
-                        : "rgba(255,255,255,0.22)";
-
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = recordingCueState === "recording" ? 3 : 2;
-      drawRoundedRect(ctx, rx, ry, rw, rh, 24);
-      ctx.stroke();
-
-      // Countdown cue — a quiet line so the learner is not looking through a ring.
-      if (recordingCueState === "countdown" && countdown > 0) {
-        const progressX = rx + 18;
-        const progressY = ry + rh - 16;
-        const progressW = rw - 36;
-        ctx.lineWidth = 4;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = "rgba(245,158,11,0.22)";
-        ctx.beginPath();
-        ctx.moveTo(progressX, progressY);
-        ctx.lineTo(progressX + progressW, progressY);
-        ctx.stroke();
-        ctx.strokeStyle = "rgba(245,158,11,0.9)";
-        ctx.beginPath();
-        ctx.moveTo(progressX, progressY);
-        ctx.lineTo(progressX + progressW * countdown, progressY);
-        ctx.stroke();
-        ctx.lineCap = "butt";
-      }
-
-      // State label
-      if (recordingCueState === "recording") {
-        ctx.fillStyle = "#ef4444";
-        ctx.beginPath();
-        ctx.arc(rx + rw - 14, ry + 14, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 11px system-ui";
-        ctx.fillText("REC", rx + rw - 50, ry + 19);
-      }
-
-      // Guide instruction — keep this sparse; the primary prompt lives in the center card.
-      const labelY = Math.min(h - 14, ry + rh - 14);
-      ctx.textAlign = "center";
-      if (paused && camState === "active") {
-        ctx.fillStyle = "rgba(255,255,255,0.68)";
-        ctx.font = "12px system-ui";
-        ctx.fillText("Paused", rx + rw / 2, labelY);
-      } else if (recordingCueState === "countdown") {
-        ctx.fillStyle = "rgba(245,158,11,0.9)";
-        ctx.font = "12px system-ui";
-        ctx.fillText("Get ready", rx + rw / 2, labelY);
-      } else if (recordingCueState === "recording") {
-        ctx.fillStyle = "rgba(239,68,68,0.8)";
-        ctx.font = "12px system-ui";
-        ctx.fillText("Sign now", rx + rw / 2, labelY);
-      }
-      ctx.textAlign = "left";
-
-      rafRef.current = requestAnimationFrame(draw);
-    };
-
-    rafRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [camState, recordingCueState, countdown, paused]);
-
   return (
     <section
+      role="button"
+      tabIndex={0}
+      onClick={onToggleHidden}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggleHidden();
+        }
+      }}
       className="h-full w-full overflow-hidden relative rounded-[28px] border border-slate-700/60"
       style={{ background: "oklch(0.12 0.02 260)", boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
+      aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       {camState === "denied" && (
         <div className="absolute inset-0 flex items-center justify-center text-center px-6">
@@ -311,9 +240,10 @@ export function WebcamView({
       )}
       {!cameraEnabled && (
         <div className="absolute inset-0 flex items-center justify-center text-center px-6">
-          <p className="text-slate-400 text-sm">Camera paused.</p>
+          <p className="text-slate-400 text-sm">Camera off.</p>
         </div>
       )}
+      <span className="absolute left-5 top-4 z-20 text-xs font-medium text-slate-300">Self-view</span>
       <video
         ref={videoRef}
         autoPlay
@@ -333,12 +263,40 @@ export function WebcamView({
       {!hidden && (
         <div className="absolute inset-0 pointer-events-none bg-slate-950/10" />
       )}
-      <canvas
-        ref={overlayRef}
-        className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${
-          hidden ? "opacity-0" : "opacity-100"
-        }`}
-      />
+      {recordingCueState === "recording" && !hidden && (
+        <div className="absolute bottom-3 left-3 z-30 rounded-md border border-red-300/20 bg-red-950/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-200">
+          REC
+        </div>
+      )}
+      <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
+      {recordingCueState === "countdown" && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center rounded-[28px] pointer-events-none"
+          style={{
+            background: "oklch(0.12 0.02 260 / 0.58)",
+            backdropFilter: "blur(3px)",
+          }}
+        >
+          <div
+            className="flex h-32 w-32 items-center justify-center rounded-full border shadow-2xl"
+            style={{
+              background: "oklch(0.18 0.024 260 / 0.72)",
+              borderColor: "oklch(0.94 0.042 85 / 0.45)",
+              boxShadow: "0 0 40px oklch(0.94 0.042 85 / 0.16)",
+            }}
+          >
+            <span
+              className="text-7xl leading-none"
+              style={{
+                color: "oklch(0.94 0.042 85)",
+                fontFamily: "'Newsreader', Georgia, serif",
+              }}
+            >
+              {Math.max(1, COUNTDOWN_STEPS - Math.floor(countdown * COUNTDOWN_STEPS))}
+            </span>
+          </div>
+        </div>
+      )}
       {overlay}
     </section>
   );

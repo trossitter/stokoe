@@ -100,15 +100,19 @@ function PromptFocusOverlay({
   paused,
   sessionState,
   docked,
+  hasAttempt,
   onDockToggle,
   onStart,
+  onRetry,
 }: {
   item: VocabItem;
   paused: boolean;
   sessionState: SessionState;
   docked: boolean;
+  hasAttempt: boolean;
   onDockToggle: () => void;
   onStart: () => void;
+  onRetry: () => void;
 }) {
   const hiddenWhileSigning = sessionState === "recording" || sessionState === "evaluating";
 
@@ -202,9 +206,11 @@ function PromptFocusOverlay({
 }
 
 export default function App() {
+  const searchParams = new URLSearchParams(location.search);
+  const bonusPreview = import.meta.env.DEV && searchParams.has("bonus") && !!getProfile()?.tutorialDone;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(() => getProfile());
-  const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? "app" : "login");
+  const [appPhase, setAppPhase] = useState<AppPhase>(() => getProfile() ? (bonusPreview ? "bonus" : "app") : "login");
   const [activeView, setActiveView] = useState<AppView>("practice");
   const [order] = useState<number[]>(() => shuffle(VOCAB.map((_, i) => i)));
   const [lessonOrder, setLessonOrder] = useState<number[] | null>(null);
@@ -223,9 +229,9 @@ export default function App() {
   const [promptDocked, setPromptDocked] = useState(false);
   const [gestureConfirmation, setGestureConfirmation] = useState<GestureConfirmation | null>(null);
   const [recordRequestId, setRecordRequestId] = useState(0);
-  const [bonusVocab, setBonusVocab] = useState<VocabItem[]>([]);
+  const [bonusVocab, setBonusVocab] = useState<VocabItem[]>(() => bonusPreview ? VOCAB.slice(0, 5) : []);
   const [forceOnboarding, setForceOnboarding] = useState(
-    () => new URLSearchParams(location.search).has("onboarding")
+    () => searchParams.has("onboarding")
   );
 
   // Pointer-drag tracking for desktop mouse swipe fallback
@@ -409,12 +415,14 @@ export default function App() {
 
     setVocabIndex(nextIndex);
     setPassed(null); setConfidence(null); setHintKey(null);
+    setVideoHidden(true);
     setSessionState("idle");
   }, [activeOrder.length, lessonOrder, startBonusRound, vocabIndex]);
 
   const handlePrev = useCallback(() => {
     setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
+    setVideoHidden(true);
     setSessionState("idle");
   }, []);
 
