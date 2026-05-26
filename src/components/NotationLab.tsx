@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import type { VocabItem } from "../data/vocab";
 import { NOTATION } from "../data/notation";
-import { NARRATIVE_PASSAGES, type NarrativeEntryStatus } from "../data/narrativePassages";
+import { NARRATIVE_PASSAGES } from "../data/narrativePassages";
+
+type Props = {
+  vocab: VocabItem[];
+  onPracticeSign?: (id: string) => void;
+};
 
 type ParamKey = "tab" | "dez" | "orientation" | "sig";
 
@@ -91,25 +96,11 @@ function Glyph({
   );
 }
 
-function StatusPill({ status }: { status: NarrativeEntryStatus }) {
-  const verified = status === "verified";
-
-  return (
-    <span
-      className="inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
-      style={{
-        background: verified ? "oklch(0.18 0.024 260 / 0.38)" : "oklch(0.94 0.042 85 / 0.08)",
-        borderColor: verified ? "oklch(0.36 0.028 260 / 0.72)" : "oklch(0.94 0.042 85 / 0.28)",
-        color: verified ? "rgb(148 163 184)" : "oklch(0.94 0.042 85 / 0.82)",
-        fontFamily: "'JetBrains Mono', monospace",
-      }}
-    >
-      {verified ? "App entry" : "Constructed"}
-    </span>
-  );
+function formatGloss(gloss: string): string {
+  return gloss.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export function NotationLab({ vocab }: { vocab: VocabItem[] }) {
+export function NotationLab({ vocab, onPracticeSign }: Props) {
   const signs = useMemo(
     () => vocab.filter((item) => NOTATION[item.id]).sort((a, b) => a.word.localeCompare(b.word)),
     [vocab],
@@ -338,32 +329,61 @@ export function NotationLab({ vocab }: { vocab: VocabItem[] }) {
               const verifiedNotation = entry.notationId ? NOTATION[entry.notationId] : null;
               const ascii = verifiedNotation?.ascii ?? entry.ascii ?? "?";
               const readable = verifiedNotation?.readable ?? entry.description;
+              const canPractice = !!entry.notationId && !!onPracticeSign;
+              const glossLabel = showGlosses ? formatGloss(entry.gloss) : "—";
 
               return (
                 <div
                   key={`${activePassage.id}-${entry.beat}-${entry.gloss}-${index}`}
-                  className="grid gap-3 rounded-lg border border-slate-700/60 bg-slate-950/30 p-3 md:grid-cols-[72px_112px_minmax(120px,0.42fr)_minmax(0,1fr)] md:items-center"
+                  className="grid gap-x-4 gap-y-1 rounded-lg border border-slate-700/60 bg-slate-950/30 p-3 md:grid-cols-[28px_minmax(0,1fr)_108px_minmax(0,1fr)] md:items-center"
                 >
+                  <div
+                    className="text-[10px] uppercase tracking-[0.2em] text-slate-500 md:pt-0.5"
+                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  >
+                    {entry.beat}
+                  </div>
                   <div>
-                    <div
-                      className="text-[10px] uppercase tracking-[0.18em] text-slate-500"
-                      style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                    >
-                      Beat
-                    </div>
-                    <div className="text-sm font-semibold text-slate-200">{entry.beat}</div>
+                    {canPractice ? (
+                      <button
+                        type="button"
+                        onClick={() => onPracticeSign(entry.notationId!)}
+                        className="group text-left outline-none"
+                        aria-label={`Practice ${entry.gloss}`}
+                      >
+                        <span
+                          className="text-2xl leading-tight transition-colors group-hover:text-slate-50 group-focus-visible:text-slate-50"
+                          style={{
+                            fontFamily: "'Newsreader', Georgia, serif",
+                            color: "oklch(0.94 0.042 85)",
+                          }}
+                        >
+                          {glossLabel}
+                        </span>
+                        <span
+                          className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 transition-colors group-hover:text-slate-300 group-focus-visible:text-slate-300"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                        >
+                          Practice
+                        </span>
+                      </button>
+                    ) : (
+                      <span
+                        className="text-2xl leading-tight"
+                        style={{
+                          fontFamily: "'Newsreader', Georgia, serif",
+                          color: "oklch(0.94 0.042 85)",
+                        }}
+                      >
+                        {glossLabel}
+                      </span>
+                    )}
                   </div>
                   <div className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-center">
                     <Glyph>{ascii}</Glyph>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill status={entry.status} />
-                    <span className="text-sm font-semibold text-slate-100">
-                      {showGlosses ? entry.gloss : "Gloss hidden"}
-                    </span>
-                  </div>
                   <div>
-                    <p className="text-sm leading-relaxed text-slate-300">{readable}</p>
+                    <p className="text-xs leading-relaxed text-slate-500">{readable}</p>
                   </div>
                 </div>
               );
