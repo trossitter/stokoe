@@ -29,6 +29,8 @@ type AppPhase = "login" | "login-exit" | "splash" | "app" | "bonus";
 type AppView = "practice" | "notation";
 type GestureConfirmation = "Skip" | "Next" | "Record" | "Retry";
 
+const BONUS_TRANSITION_DELAY_MS = 1600;
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -276,6 +278,7 @@ export default function App() {
   // Pointer-drag tracking for desktop mouse swipe fallback
   const pointerStartX = useRef<number | null>(null);
   const gestureConfirmationTimerRef = useRef<number | null>(null);
+  const bonusTransitionTimerRef = useRef<number | null>(null);
 
   const activeOrder = lessonOrder ?? order;
   const item = VOCAB[activeOrder[vocabIndex % activeOrder.length]];
@@ -362,7 +365,15 @@ export default function App() {
     });
   }, []);
 
+  const clearBonusTransition = useCallback(() => {
+    if (bonusTransitionTimerRef.current) {
+      window.clearTimeout(bonusTransitionTimerRef.current);
+      bonusTransitionTimerRef.current = null;
+    }
+  }, []);
+
   const resetPracticeState = useCallback(() => {
+    clearBonusTransition();
     setVocabIndex(0);
     setPassed(null);
     setConfidence(null);
@@ -380,7 +391,7 @@ export default function App() {
     }
     setRecordRequestId(0);
     clearLastRecording();
-  }, [clearLastRecording]);
+  }, [clearBonusTransition, clearLastRecording]);
 
   const showGestureConfirmation = useCallback((label: GestureConfirmation) => {
     if (gestureConfirmationTimerRef.current) {
@@ -396,6 +407,9 @@ export default function App() {
   useEffect(() => () => {
     if (gestureConfirmationTimerRef.current) {
       window.clearTimeout(gestureConfirmationTimerRef.current);
+    }
+    if (bonusTransitionTimerRef.current) {
+      window.clearTimeout(bonusTransitionTimerRef.current);
     }
   }, []);
 
@@ -437,13 +451,15 @@ export default function App() {
   }, [resetPracticeState]);
 
   const handleOpenPractice = useCallback(() => {
+    clearBonusTransition();
     setActiveView("practice");
-  }, []);
+  }, [clearBonusTransition]);
 
   const handleOpenNotation = useCallback(() => {
+    clearBonusTransition();
     setActiveView("notation");
     setPracticePaused(true);
-  }, []);
+  }, [clearBonusTransition]);
 
   const handlePracticePauseToggle = useCallback(() => {
     if (practicePaused) {
@@ -459,6 +475,7 @@ export default function App() {
 
   const handleRecordAttempt = useCallback(() => {
     if (!practiceStarted || practicePaused || sessionState !== "idle") return;
+    clearBonusTransition();
     clearLastRecording();
     setPassed(null);
     setConfidence(null);
@@ -467,7 +484,7 @@ export default function App() {
     setRecordingCueState("idle");
     setSessionState("recording");
     setRecordRequestId((id) => id + 1);
-  }, [clearLastRecording, practicePaused, practiceStarted, sessionState]);
+  }, [clearBonusTransition, clearLastRecording, practicePaused, practiceStarted, sessionState]);
 
   const startBonusRound = useCallback(() => {
     const sessionIndices = lessonOrder ?? activeOrder;
@@ -481,13 +498,23 @@ export default function App() {
     setAppPhase("bonus");
   }, [activeOrder, lessonOrder, resetPracticeState]);
 
+  const scheduleBonusRound = useCallback(() => {
+    if (bonusTransitionTimerRef.current) return;
+
+    bonusTransitionTimerRef.current = window.setTimeout(() => {
+      bonusTransitionTimerRef.current = null;
+      startBonusRound();
+    }, BONUS_TRANSITION_DELAY_MS);
+  }, [startBonusRound]);
+
   const handleNext = useCallback(({ afterAttempt = false }: { afterAttempt?: boolean } = {}) => {
     const nextIndex = vocabIndex + 1;
     if (afterAttempt && lessonOrder && nextIndex >= activeOrder.length) {
-      startBonusRound();
+      scheduleBonusRound();
       return;
     }
 
+    clearBonusTransition();
     setVocabIndex(nextIndex);
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
@@ -495,9 +522,10 @@ export default function App() {
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
-  }, [activeOrder.length, clearLastRecording, lessonOrder, startBonusRound, vocabIndex]);
+  }, [activeOrder.length, clearBonusTransition, clearLastRecording, lessonOrder, scheduleBonusRound, vocabIndex]);
 
   const handlePrev = useCallback(() => {
+    clearBonusTransition();
     setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
@@ -505,14 +533,15 @@ export default function App() {
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
-  }, [clearLastRecording]);
+  }, [clearBonusTransition, clearLastRecording]);
 
   const handleRetry = useCallback(() => {
+    clearBonusTransition();
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
     setRecordingCueState("idle");
     setSessionState("idle");
-  }, []);
+  }, [clearBonusTransition]);
 
   const handleSkip = useCallback(() => {
     handleNext({ afterAttempt: true });
