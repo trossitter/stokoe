@@ -1,4 +1,4 @@
-// Confirmation overlay — appears on first swipe, dismissed by a second swipe.
+// Confirmation overlay for advancing to the next sign.
 // Rendered inside the camera container so the student's attention stays on camera.
 export function ConfirmNext({ onConfirm }: { onConfirm: () => void }) {
   return (
@@ -23,7 +23,7 @@ export function ConfirmNext({ onConfirm }: { onConfirm: () => void }) {
           →
         </p>
         <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
-          swipe right again — or tap
+          tap to continue
         </p>
       </div>
     </div>

@@ -91,8 +91,6 @@ export function Onboarding({ onComplete }: Props) {
 
   const hintText = isFinalPanel
     ? "Arrow → · Space · Enter"
-    : stream
-    ? "← swipe your hand · drag · arrows →"
     : "Drag · arrows →";
 
   const handleForward = useCallback(() => {

@@ -136,7 +136,6 @@ export function SignPrompt({
                   Next →
                 </button>
               </div>
-              <p className="text-center text-xs text-slate-500">← swipe your hand to navigate →</p>
             </div>
           )}
         </div>

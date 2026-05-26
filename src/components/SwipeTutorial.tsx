@@ -223,8 +223,8 @@ export function SwipeTutorial({ videoRef, onComplete }: Props) {
           >→</span>
           <p className="text-xs" style={{ color: handDetected ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)" }}>
             {handDetected
-              ? isLast ? "swipe right or tap to begin" : "swipe right or tap to continue"
-              : "tap — or show your hand and swipe right"}
+              ? isLast ? "tap to begin" : "tap to continue"
+              : "tap to continue"}
           </p>
         </div>
       </div>
