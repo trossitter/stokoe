@@ -1,5 +1,6 @@
 import { masteryLevel } from "../store/progress";
 import type { SignRecord } from "../store/progress";
+import type { RecordingCueState } from "./WebcamView";
 
 type Props = {
   record: SignRecord | undefined;
@@ -13,6 +14,7 @@ type Props = {
   vocabTotal: number;
   paused?: boolean;
   recordingIssue?: boolean;
+  recordingCueState?: RecordingCueState;
 };
 
 export function SignPrompt({
@@ -27,6 +29,7 @@ export function SignPrompt({
   vocabTotal,
   paused = false,
   recordingIssue = false,
+  recordingCueState = "idle",
 }: Props) {
   const mastery = masteryLevel(record);
 
@@ -106,9 +109,15 @@ export function SignPrompt({
             </div>
           )}
           {sessionState === "recording" && (
-            <div className="flex-1 py-3 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-medium text-center">
-              Recording your sign…
-            </div>
+            recordingCueState === "recording" ? (
+              <div className="flex-1 py-3 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-medium text-center">
+                Recording your sign…
+              </div>
+            ) : (
+              <div className="flex-1 py-3 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-300 text-sm font-medium text-center">
+                Get ready…
+              </div>
+            )
           )}
           {sessionState === "evaluating" && (
             <div className="flex-1 py-3 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-400 text-sm font-medium text-center">

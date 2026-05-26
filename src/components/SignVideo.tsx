@@ -221,7 +221,7 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
           aria-label="Show reference video"
         >
           <span className="absolute left-5 top-4 text-xs font-medium text-slate-400">Reference</span>
-          <p className="text-sm text-slate-400">Reference hidden</p>
+          <p className="text-2xl font-semibold text-slate-200">Click to show</p>
           <ReferenceToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
         </div>
       ) : !videoUrl ? (

@@ -196,6 +196,68 @@ describe("verifyNotation 2-of-3 pass/fail logic", () => {
   });
 });
 
+describe("verifyNotation sign-specific guardrails", () => {
+  it("does not pass NO for a static H-hand in neutral space", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.5, 0.5], [0.5, 0.5], [0.5, 0.5]]),
+      NOTATION.no,
+      dezPredictor("H"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("sig");
+  });
+
+  it("does not pass NO for finger-close movement with the wrong handshape", async () => {
+    const result = await verifyNotation(
+      framesWithFingerClose([0.14, 0.03, 0.13, 0.035, 0.12]),
+      NOTATION.no,
+      dezPredictor("B"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("dez");
+  });
+
+  it("does not pass SEE for a static V-hand near the eyes", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.5, 0.32], [0.5, 0.32], [0.5, 0.32]]),
+      NOTATION.see,
+      dezPredictor("V"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("sig");
+  });
+
+  it("does not pass SEE when the movement starts below the eyes", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.45, 0.65], [0.51, 0.65], [0.57, 0.65]]),
+      NOTATION.see,
+      dezPredictor("V"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("tab");
+  });
+
+  it("passes SEE when location and movement are right even if handshape is noisy", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.45, 0.32], [0.51, 0.38], [0.57, 0.45]]),
+      NOTATION.see,
+      dezPredictor("B"),
+      null,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
+  });
+});
+
 // ── Additional tab location cases ─────────────────────────────────────────────
 // Without face landmarks: faceTop=0.1, faceBottom=0.7, faceMid=0.4
 // "[ ]" (chest/trunk): passes when y > 0.7

@@ -5,7 +5,7 @@
  * ASCII-Stokoe encoding (Mandel 1993) — rendered by StokoeTempo font.
  * Reference: docs/stokoe_notation_reference.md
  *
- * tab symbols:  0=neutral-space  P=forehead  U=chin/lips  }=cheek/temple
+ * tab symbols:  0=neutral-space  P=forehead  T=eyes/nose  U=chin/lips  }=cheek/temple
  *               [ ]=trunk/chest  Q=face  N=neck  J=elbow  9=wrist-sup  6=wrist-pron
  * dez symbols:  B=flat  5=spread  C=curved  G=index  X=hook  A=fist
  *               V=V-shape  L=L-shape  O=tapered-O  W=3-spread  Y=Y-shape
@@ -25,6 +25,8 @@ export type NotationEntry = {
   orientation: string; // orientation subscript (ASCII)
   sig: string;         // movement symbol (ASCII)
   readable: string;    // plain English description for hint fallback
+  requiredParameters?: Array<"tab" | "dez" | "sig">;
+  tabSample?: "start" | "middle";
 };
 
 export const NOTATION: Record<string, NotationEntry> = {
@@ -63,6 +65,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0HfD#",
     tab: "0", dez: "H", orientation: "f", sig: "D#",
     readable: "Two fingers in neutral space, snap closed",
+    requiredParameters: ["dez", "sig"],
   },
   "bathroom": {
     ascii: "0AfDg",
@@ -258,9 +261,11 @@ export const NOTATION: Record<string, NotationEntry> = {
     readable: "Both index fingers arc inward",
   },
   "see": {
-    ascii: "QVbDf",
-    tab: "Q", dez: "V", orientation: "b", sig: "Df",
+    ascii: "TVbDf",
+    tab: "T", dez: "V", orientation: "b", sig: "Df",
     readable: "V-hand from eyes, moves forward",
+    requiredParameters: ["tab", "sig"],
+    tabSample: "start",
   },
   "learn": {
     ascii: "POaDt",

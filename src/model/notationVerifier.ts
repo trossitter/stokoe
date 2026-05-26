@@ -79,6 +79,10 @@ function checkTab(
       passed = y < faceMid - 0.05;
       hint = "Bring your hand higher — near your forehead or temple.";
       break;
+    case "T":  // eyes/nose/mid-face
+      passed = y > faceTop - 0.03 && y < faceMid + 0.08 && x > 0.2 && x < 0.8;
+      hint = "Start the sign near your eyes.";
+      break;
     case "U":  // chin/lips
       passed = y > faceMid && y < faceBottom + 0.05;
       hint = "Move your hand to chin level.";
@@ -316,12 +320,13 @@ export async function verifyNotation(
     };
   }
 
-  // Use middle frame for static checks
+  // Use middle frame for static checks unless a sign depends on its starting tab.
   const midFrame = validFrames[Math.floor(validFrames.length / 2)];
+  const tabFrame = notation.tabSample === "start" ? validFrames[0] : midFrame;
   const handLm = midFrame.landmarks!;
 
   // Tab check
-  const tabResult = checkTab(handLm, faceLandmarks, notation.tab);
+  const tabResult = checkTab(tabFrame.landmarks!, faceLandmarks, notation.tab);
 
   // Dez check
   let dezPassed = true;
@@ -340,13 +345,22 @@ export async function verifyNotation(
   const paramsPassed = [tabResult.passed, dezPassed, sigResult.passed]
     .filter(Boolean).length;
 
-  const passed = paramsPassed >= 2;
+  const parameterResults = {
+    tab: tabResult.passed,
+    dez: dezPassed,
+    sig: sigResult.passed,
+  };
+  const requiredParameters = notation.requiredParameters ?? [];
+  const requiredPassed = requiredParameters.every((parameter) => parameterResults[parameter]);
+  const passed = paramsPassed >= 2 && requiredPassed;
   const confidence = (tabResult.confidence + dezConfidence + sigResult.confidence) / 3;
 
   // Identify which parameter to hint on
   let failedParameter: VerificationResult["failedParameter"] = null;
   if (!passed) {
-    if (!tabResult.passed) failedParameter = "tab";
+    const failedRequired = requiredParameters.find((parameter) => !parameterResults[parameter]);
+    if (failedRequired) failedParameter = failedRequired;
+    else if (!tabResult.passed) failedParameter = "tab";
     else if (!dezPassed) failedParameter = "dez";
     else failedParameter = "sig";
   }

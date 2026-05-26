@@ -19,11 +19,12 @@ type Props = {
   onFramesReady: (frames: ImageData[]) => void;
   onRecordingReady: (url: string) => void;
   onRecordingFramesReady?: (frames: string[]) => void;
+  onRecordingCueStateChange?: (state: RecordingCueState) => void;
   onToggleHidden: () => void;
   overlay?: React.ReactNode;
 };
 
-type RecordingCueState = "idle" | "countdown" | "recording";
+export type RecordingCueState = "idle" | "countdown" | "recording";
 
 function captureReplayFrame(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
   const width = video.videoWidth;
@@ -73,11 +74,13 @@ export function WebcamView({
   onFramesReady,
   onRecordingReady,
   onRecordingFramesReady,
+  onRecordingCueStateChange,
   onToggleHidden,
   overlay,
 }: Props) {
   const onRecordingReadyRef = useRef(onRecordingReady);
   const onRecordingFramesReadyRef = useRef(onRecordingFramesReady);
+  const onRecordingCueStateChangeRef = useRef(onRecordingCueStateChange);
   const onFramesReadyRef = useRef(onFramesReady);
   const liveVideoRef = useRef(videoRef);
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -94,6 +97,14 @@ export function WebcamView({
   useEffect(() => {
     onRecordingFramesReadyRef.current = onRecordingFramesReady;
   }, [onRecordingFramesReady]);
+
+  useEffect(() => {
+    onRecordingCueStateChangeRef.current = onRecordingCueStateChange;
+  }, [onRecordingCueStateChange]);
+
+  useEffect(() => {
+    onRecordingCueStateChangeRef.current?.(recordingCueState);
+  }, [recordingCueState]);
 
   useEffect(() => {
     onFramesReadyRef.current = onFramesReady;

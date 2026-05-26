@@ -9,6 +9,7 @@ import type { HintKey } from "./model/signClassifier";
 import { getProfile, saveProfile, markTutorialDone, getProgress, recordAttempt } from "./store/progress";
 import type { Progress, UserProfile } from "./store/progress";
 import { WebcamView } from "./components/WebcamView";
+import type { RecordingCueState } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
 import { FeedbackPanel } from "./components/FeedbackPanel";
 import { SignVideo } from "./components/SignVideo";
@@ -118,16 +119,19 @@ function PromptFocusOverlay({
 }) {
   const hiddenWhileSigning = sessionState === "recording" || sessionState === "evaluating";
 
+  if (hiddenWhileSigning) {
+    return null;
+  }
+
   return (
     <div
       className={`pointer-events-none absolute inset-x-3 z-30 flex justify-center transition-all duration-500 ease-out ${
         docked ? "top-3" : "top-1/2 -translate-y-1/2"
-      } ${hiddenWhileSigning ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
-      aria-hidden={hiddenWhileSigning}
+      } scale-100 opacity-100`}
     >
       <div
         role="button"
-        tabIndex={hiddenWhileSigning ? -1 : 0}
+        tabIndex={0}
         onClick={onDockToggle}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -136,7 +140,7 @@ function PromptFocusOverlay({
           }
         }}
         className={`border text-center shadow-xl outline-none transition-all duration-500 ease-out focus-visible:ring-2 focus-visible:ring-[oklch(0.94_0.042_85)] ${
-          hiddenWhileSigning ? "pointer-events-none" : "pointer-events-auto cursor-pointer"
+          "pointer-events-auto cursor-pointer"
         } ${
           docked
             ? "max-w-[520px] rounded-xl px-4 py-2"
@@ -264,6 +268,7 @@ export default function App() {
   const [bonusVocab, setBonusVocab] = useState<VocabItem[]>(() => bonusPreview ? VOCAB.slice(0, 5) : []);
   const [lastRecordingFrames, setLastRecordingFrames] = useState<string[]>([]);
   const [recordingIssue, setRecordingIssue] = useState(false);
+  const [recordingCueState, setRecordingCueState] = useState<RecordingCueState>("idle");
   const [forceOnboarding, setForceOnboarding] = useState(
     () => searchParams.has("onboarding")
   );
@@ -459,6 +464,7 @@ export default function App() {
     setConfidence(null);
     setHintKey(null);
     setRecordingIssue(false);
+    setRecordingCueState("idle");
     setSessionState("recording");
     setRecordRequestId((id) => id + 1);
   }, [clearLastRecording, practicePaused, practiceStarted, sessionState]);
@@ -485,6 +491,7 @@ export default function App() {
     setVocabIndex(nextIndex);
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
+    setRecordingCueState("idle");
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -494,6 +501,7 @@ export default function App() {
     setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
+    setRecordingCueState("idle");
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -502,6 +510,7 @@ export default function App() {
   const handleRetry = useCallback(() => {
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
+    setRecordingCueState("idle");
     setSessionState("idle");
   }, []);
 
@@ -723,6 +732,7 @@ export default function App() {
               vocabTotal={activeOrder.length}
               paused={practicePaused}
               recordingIssue={recordingIssue}
+              recordingCueState={recordingCueState}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
             <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-1 md:grid-cols-2">
@@ -755,6 +765,7 @@ export default function App() {
                       onFramesReady={handleFramesReady}
                       onRecordingReady={handleRecordingReady}
                       onRecordingFramesReady={handleRecordingFramesReady}
+                      onRecordingCueStateChange={setRecordingCueState}
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
                       overlay={practiceOverlay}
                     />

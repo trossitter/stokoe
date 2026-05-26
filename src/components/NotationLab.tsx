@@ -32,6 +32,7 @@ const SYMBOL_GROUPS: SymbolGroup[] = [
     items: [
       { glyph: "0", label: "Neutral space" },
       { glyph: "P", label: "Forehead / brow" },
+      { glyph: "T", label: "Eyes / nose" },
       { glyph: "U", label: "Chin / lower face" },
       { glyph: "}", label: "Cheek / temple" },
       { glyph: "[ ]", label: "Torso" },
