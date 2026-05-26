@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NOTATION } from "../data/notation";
 import type { NotationEntry } from "../data/notation";
 import { verifyNotation } from "./notationVerifier";
 import type { KeypointFrame } from "./notationVerifier";
@@ -21,6 +22,14 @@ function landmarksWithTipShift(x: number, y: number, tipShift: number): Landmark
   return landmarks;
 }
 
+function landmarksWithFingerClose(indexMiddleSpread: number): Landmark[] {
+  const landmarks = landmarksAt(0.5, 0.5);
+  landmarks[4] = { x: 0.48, y: 0.49, z: 0 };
+  landmarks[8] = { x: 0.48 + indexMiddleSpread, y: 0.49, z: 0 };
+  landmarks[12] = { x: 0.48 + indexMiddleSpread, y: 0.51, z: 0 };
+  return landmarks;
+}
+
 function framesFrom(points: Array<[number, number]>): KeypointFrame[] {
   return points.map(([x, y], i) => ({
     landmarks: landmarksAt(x, y),
@@ -31,6 +40,13 @@ function framesFrom(points: Array<[number, number]>): KeypointFrame[] {
 function framesWithTipShifts(shifts: number[]): KeypointFrame[] {
   return shifts.map((shift, i) => ({
     landmarks: landmarksWithTipShift(0.5, 0.5, shift),
+    timestamp: i * 100,
+  }));
+}
+
+function framesWithFingerClose(spreads: number[]): KeypointFrame[] {
+  return spreads.map((spread, i) => ({
+    landmarks: landmarksWithFingerClose(spread),
     timestamp: i * 100,
   }));
 }
@@ -105,7 +121,19 @@ describe("verifyNotation sig checks", () => {
     expect(result.failedParameter).toBeNull();
   });
 
-  it("fails D@ when x and y reversals are grouped instead of interleaved", async () => {
+  it("passes NO for finger-close movement without wrist travel", async () => {
+    const result = await verifyNotation(
+      framesWithFingerClose([0.14, 0.03, 0.13, 0.035, 0.12]),
+      NOTATION.no,
+      dezPredictor("H"),
+      null,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
+  });
+
+  it("passes when only D@ movement is approximate", async () => {
     const result = await verifyNotation(
       framesFrom([[0.4, 0.45], [0.6, 0.45], [0.4, 0.45], [0.6, 0.45], [0.6, 0.6], [0.6, 0.45]]),
       notation("0", "D@"),
@@ -113,11 +141,11 @@ describe("verifyNotation sig checks", () => {
       null,
     );
 
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("sig");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 
-  it("fails Dr for a single vertical reversal", async () => {
+  it("passes when only Dr movement is approximate", async () => {
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.5, 0.56], [0.5, 0.5]]),
       notation("0", "Dr"),
@@ -125,12 +153,12 @@ describe("verifyNotation sig checks", () => {
       null,
     );
 
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("sig");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 });
 
-describe("verifyNotation 3-of-3 pass/fail logic", () => {
+describe("verifyNotation 2-of-3 pass/fail logic", () => {
   it("passes when tab, dez, and sig all pass", async () => {
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.505, 0.5], [0.5, 0.505]]),
@@ -143,7 +171,7 @@ describe("verifyNotation 3-of-3 pass/fail logic", () => {
     expect(result.failedParameter).toBeNull();
   });
 
-  it("fails when exactly one parameter fails", async () => {
+  it("passes when exactly one parameter fails", async () => {
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.505, 0.5], [0.5, 0.505]]),
       notation("0", "D", "B"),
@@ -151,15 +179,15 @@ describe("verifyNotation 3-of-3 pass/fail logic", () => {
       null,
     );
 
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("dez");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 
-  it("reports the first failed parameter in tab, dez, sig order", async () => {
+  it("fails when two parameters fail and reports the first failed parameter in tab, dez, sig order", async () => {
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.505, 0.5], [0.5, 0.505]]),
       notation("P", "Df", "B"),
-      dezPredictor("A"),
+      dezPredictor("B"),
       null,
     );
 
@@ -196,7 +224,7 @@ describe("verifyNotation additional tab location cases", () => {
   );
 
   it.each(chestSigns)(
-    "%s (tab=[ ]) fails when wrist is at forehead level (y≈0.2)",
+    "%s (tab=[ ]) still passes when only location is off",
     async (_label, tab) => {
       const result = await verifyNotation(
         framesFrom([[0.5, 0.2], [0.5, 0.2], [0.5, 0.2]]),
@@ -204,8 +232,8 @@ describe("verifyNotation additional tab location cases", () => {
         dezPredictor("B"),
         null,
       );
-      expect(result.passed).toBe(false);
-      expect(result.failedParameter).toBe("tab");
+      expect(result.passed).toBe(true);
+      expect(result.failedParameter).toBeNull();
     },
   );
 
@@ -231,7 +259,7 @@ describe("verifyNotation additional tab location cases", () => {
   );
 
   it.each(chinSigns)(
-    "%s (tab=U) fails when wrist is at chest level (y≈0.8)",
+    "%s (tab=U) still passes when only location is off",
     async (_label, tab) => {
       const result = await verifyNotation(
         framesFrom([[0.5, 0.8], [0.5, 0.8], [0.5, 0.8]]),
@@ -239,8 +267,8 @@ describe("verifyNotation additional tab location cases", () => {
         dezPredictor("B"),
         null,
       );
-      expect(result.passed).toBe(false);
-      expect(result.failedParameter).toBe("tab");
+      expect(result.passed).toBe(true);
+      expect(result.failedParameter).toBeNull();
     },
   );
 });
@@ -261,7 +289,7 @@ describe("verifyNotation additional sig movement cases", () => {
     expect(result.failedParameter).toBeNull();
   });
 
-  it("fails Df when wrist barely moves (net displacement and total movement both below threshold)", async () => {
+  it("passes Df when only movement is too small", async () => {
     // net x ≈ 0.001, totalMovement ≈ 0.001 — both under the 0.04 threshold
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.5005, 0.5], [0.501, 0.5]]),
@@ -269,8 +297,8 @@ describe("verifyNotation additional sig movement cases", () => {
       dezPredictor("B"),
       null,
     );
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("sig");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 
   // Dr — repeated up-down (nod)
@@ -288,7 +316,7 @@ describe("verifyNotation additional sig movement cases", () => {
     expect(result.failedParameter).toBeNull();
   });
 
-  it("fails Dr for a single up-down reversal (confirms existing coverage)", async () => {
+  it("passes Dr when only movement has a single up-down reversal", async () => {
     // one reversal — mirrors the existing test to confirm it still holds
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.5, 0.56], [0.5, 0.5]]),
@@ -296,8 +324,8 @@ describe("verifyNotation additional sig movement cases", () => {
       dezPredictor("B"),
       null,
     );
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("sig");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 
   // D — static hold
@@ -313,7 +341,7 @@ describe("verifyNotation additional sig movement cases", () => {
     expect(result.failedParameter).toBeNull();
   });
 
-  it("fails D when wrist moves significantly (delta > threshold)", async () => {
+  it("passes D when only the static hold moves too much", async () => {
     // totalMovement = 0.1 + 0.1 = 0.2 — well above the 0.08 threshold
     const result = await verifyNotation(
       framesFrom([[0.5, 0.5], [0.6, 0.5], [0.7, 0.5]]),
@@ -321,8 +349,8 @@ describe("verifyNotation additional sig movement cases", () => {
       dezPredictor("B"),
       null,
     );
-    expect(result.passed).toBe(false);
-    expect(result.failedParameter).toBe("sig");
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 });
 

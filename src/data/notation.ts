@@ -12,6 +12,7 @@
  *               H=2-flat  F=okay  8=bent-middle  3=3-finger
  * sig symbols:  Dx=contact  D@=circular  Dg=wrist-twist  Dv=down  D^=up
  *               Df=forward  Dt=toward  D>=rightward  D<=leftward  Dz=side-to-side
+ *               D#=close-up
  *               D%=separate  D+=cross  De=wiggle  Dr=nod  Dw=up-down  Dm=to-fro
  * orientation:  fD=palm-away  tD=palm-toward  aD=palm-up  bD=palm-down
  *               ^D=fingers-up  >D=palm-dominant-side  vD=fingers-down
@@ -59,8 +60,8 @@ export const NOTATION: Record<string, NotationEntry> = {
     readable: "Fist in neutral space, nod up-down",
   },
   "no": {
-    ascii: "0HfDz",
-    tab: "0", dez: "H", orientation: "f", sig: "Dz",
+    ascii: "0HfD#",
+    tab: "0", dez: "H", orientation: "f", sig: "D#",
     readable: "Two fingers in neutral space, snap closed",
   },
   "bathroom": {

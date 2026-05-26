@@ -6,9 +6,10 @@
  *   Dez  — ONNX MLP: 21 normalized landmarks → handshape category
  *   Sig  — rule-based: motion pattern detection over landmark sequence
  *
- * Pass logic: all three parameters must pass. Learners pass when they sign
- * correctly, not merely when they engage. If the Dez model is unavailable,
- * dezPassed defaults to true (so Tab + Sig are the effective gatekeepers).
+ * Pass logic: at least two of three parameters must pass. Stokoe evaluates the
+ * sign's structure rather than trying to recognize a whole-sign label. If the
+ * Dez model is unavailable, dezPassed defaults to true (so Tab + Sig are the
+ * effective gatekeepers).
  */
 
 import type { NotationEntry } from "../data/notation";
@@ -115,6 +116,7 @@ type Axis = "x" | "y";
 
 const REVERSAL_EPS = 0.0001;
 const FINGERTIP_INDICES = [4, 8, 12, 16, 20];
+const CLOSE_FINGERTIP_INDICES = [8, 12];
 
 function reversalEvents(deltas: number[], axis: Axis): Array<{ axis: Axis; index: number }> {
   const events: Array<{ axis: Axis; index: number }> = [];
@@ -147,6 +149,14 @@ function variance(values: number[]): number {
   if (values.length === 0) return 0;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   return values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+}
+
+function averageThumbDistance(landmarks: HandLandmarks): number {
+  const thumbTip = landmarks[4];
+  return CLOSE_FINGERTIP_INDICES.reduce((sum, index) => {
+    const tip = landmarks[index];
+    return sum + Math.hypot(tip.x - thumbTip.x, tip.y - thumbTip.y, tip.z - thumbTip.z);
+  }, 0) / CLOSE_FINGERTIP_INDICES.length;
 }
 
 function checkSig(
@@ -231,6 +241,14 @@ function checkSig(
                variance(fingertipXs) > 0.00005 &&
                totalMovement < 0.12;
       hint = "Wiggle your fingers while keeping your hand mostly in place.";
+      break;
+    }
+    case "D#": {  // close up / snap fingers closed
+      const thumbDistances = validFrames.map(f => averageThumbDistance(f.landmarks!));
+      const distanceRange = Math.max(...thumbDistances) - Math.min(...thumbDistances);
+      const closesTowardThumb = Math.min(...thumbDistances) < Math.max(...thumbDistances) * 0.72;
+      passed = distanceRange > 0.035 && closesTowardThumb;
+      hint = "Close your fingers toward your thumb.";
       break;
     }
     case "Dz": {  // side to side
@@ -318,11 +336,11 @@ export async function verifyNotation(
   // Sig check
   const sigResult = checkSig(frames, notation.sig);
 
-  // Pass requires all three parameters. Learners pass when they sign correctly.
+  // Pass requires a 2-of-3 majority across the phonological parameters.
   const paramsPassed = [tabResult.passed, dezPassed, sigResult.passed]
     .filter(Boolean).length;
 
-  const passed = paramsPassed >= 3;
+  const passed = paramsPassed >= 2;
   const confidence = (tabResult.confidence + dezConfidence + sigResult.confidence) / 3;
 
   // Identify which parameter to hint on
