@@ -103,6 +103,7 @@ function PromptFocusOverlay({
   hasAttempt,
   onDockToggle,
   onStart,
+  onSkip,
   onRetry,
 }: {
   item: VocabItem;
@@ -112,6 +113,7 @@ function PromptFocusOverlay({
   hasAttempt: boolean;
   onDockToggle: () => void;
   onStart: () => void;
+  onSkip: () => void;
   onRetry: () => void;
 }) {
   const hiddenWhileSigning = sessionState === "recording" || sessionState === "evaluating";
@@ -158,24 +160,35 @@ function PromptFocusOverlay({
               {item.word}
             </span>
             {paused && (
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (sessionState === "result") {
-                    onRetry();
-                    return;
-                  }
-                  onStart();
-                }}
-                className="rounded-md border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors hover:brightness-110"
-                style={{
-                  background: "oklch(0.94 0.042 85)",
-                  borderColor: "oklch(0.94 0.042 85)",
-                  color: "oklch(0.18 0.024 260)",
-                }}
-              >
-                {hasAttempt ? "Record again" : "Record"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (sessionState === "result") {
+                      onRetry();
+                      return;
+                    }
+                    onStart();
+                  }}
+                  className="rounded-md border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors hover:brightness-110"
+                  style={{
+                    background: "oklch(0.94 0.042 85)",
+                    borderColor: "oklch(0.94 0.042 85)",
+                    color: "oklch(0.18 0.024 260)",
+                  }}
+                >
+                  {hasAttempt ? "Record again" : "Record"}
+                </button>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSkip();
+                  }}
+                  className="rounded-md border border-slate-700 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-200 transition-colors hover:bg-slate-800/70"
+                >
+                  Skip
+                </button>
+              </div>
             )}
           </div>
         ) : (
@@ -187,24 +200,35 @@ function PromptFocusOverlay({
               {item.word}
             </div>
             {paused && (
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (sessionState === "result") {
-                    onRetry();
-                    return;
-                  }
-                  onStart();
-                }}
-                className="mt-4 rounded-lg border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:brightness-110"
-                style={{
-                  background: "oklch(0.94 0.042 85)",
-                  borderColor: "oklch(0.94 0.042 85)",
-                  color: "oklch(0.18 0.024 260)",
-                }}
-              >
-                {hasAttempt ? "Record again" : "Record"}
-              </button>
+              <div className="mt-4 flex justify-center gap-2">
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (sessionState === "result") {
+                      onRetry();
+                      return;
+                    }
+                    onStart();
+                  }}
+                  className="rounded-lg border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:brightness-110"
+                  style={{
+                    background: "oklch(0.94 0.042 85)",
+                    borderColor: "oklch(0.94 0.042 85)",
+                    color: "oklch(0.18 0.024 260)",
+                  }}
+                >
+                  {hasAttempt ? "Record again" : "Record"}
+                </button>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSkip();
+                  }}
+                  className="rounded-lg border border-slate-700 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-200 transition-colors hover:bg-slate-800/70"
+                >
+                  Skip
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -239,6 +263,7 @@ export default function App() {
   const [recordRequestId, setRecordRequestId] = useState(0);
   const [bonusVocab, setBonusVocab] = useState<VocabItem[]>(() => bonusPreview ? VOCAB.slice(0, 5) : []);
   const [lastRecordingFrames, setLastRecordingFrames] = useState<string[]>([]);
+  const [recordingIssue, setRecordingIssue] = useState(false);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => searchParams.has("onboarding")
   );
@@ -282,6 +307,7 @@ export default function App() {
   const handleFramesReady = useCallback(
     async (frames: ImageData[]) => {
       if (frames.length === 0) {
+        setRecordingIssue(true);
         setSessionState("idle");
         return;
       }
@@ -293,16 +319,22 @@ export default function App() {
         setConfidence(result.confidence);
         setHintKey(result.hintKey);
         setProgress(updated);
+        setRecordingIssue(false);
         setSessionState("result");
       } catch {
-        setSessionState("idle");
+        const updated = recordAttempt(item.id, false);
+        setPassed(false);
+        setConfidence(0);
+        setHintKey("framing");
+        setProgress(updated);
+        setRecordingIssue(false);
+        setSessionState("result");
       }
     },
     [item.id],
   );
 
   const handleRecordingReady = useCallback((url: string) => {
-    setLastRecordingFrames([]);
     setLastRecordingUrl(prev => {
       if (prev) URL.revokeObjectURL(prev);
       return url;
@@ -336,6 +368,7 @@ export default function App() {
     setPromptDocked(false);
     setVideoHidden(true);
     setGestureConfirmation(null);
+    setRecordingIssue(false);
     if (gestureConfirmationTimerRef.current) {
       window.clearTimeout(gestureConfirmationTimerRef.current);
       gestureConfirmationTimerRef.current = null;
@@ -425,6 +458,7 @@ export default function App() {
     setPassed(null);
     setConfidence(null);
     setHintKey(null);
+    setRecordingIssue(false);
     setSessionState("recording");
     setRecordRequestId((id) => id + 1);
   }, [clearLastRecording, practicePaused, practiceStarted, sessionState]);
@@ -450,6 +484,7 @@ export default function App() {
 
     setVocabIndex(nextIndex);
     setPassed(null); setConfidence(null); setHintKey(null);
+    setRecordingIssue(false);
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -458,6 +493,7 @@ export default function App() {
   const handlePrev = useCallback(() => {
     setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
+    setRecordingIssue(false);
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -465,8 +501,13 @@ export default function App() {
 
   const handleRetry = useCallback(() => {
     setPassed(null); setConfidence(null); setHintKey(null);
+    setRecordingIssue(false);
     setSessionState("idle");
   }, []);
+
+  const handleSkip = useCallback(() => {
+    handleNext({ afterAttempt: true });
+  }, [handleNext]);
 
   // Show a brief directional flash, then execute the navigation.
   // Gives the learner clear confirmation their swipe registered before the UI changes.
@@ -491,9 +532,9 @@ export default function App() {
     }
     if (displayState === "idle") {
       showGestureConfirmation("Skip");
-      handleNext();
+      handleSkip();
     }
-  }, [displayState, handleNext, showGestureConfirmation]);
+  }, [displayState, handleNext, handleSkip, showGestureConfirmation]);
 
   const handleGestureRetry = useCallback(() => {
     if (displayState === "result") {
@@ -675,11 +716,13 @@ export default function App() {
               sessionState={displayState}
               onRecord={handleRecordAttempt}
               onNext={() => handleNext({ afterAttempt: true })}
+              onSkip={handleSkip}
               onRetry={handleRetry}
               passed={passed}
               vocabIndex={vocabIndex % activeOrder.length}
               vocabTotal={activeOrder.length}
               paused={practicePaused}
+              recordingIssue={recordingIssue}
             />
             {/* Webcam + reference video side by side so learner can compare in real time */}
             <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-1 md:grid-cols-2">
@@ -688,9 +731,10 @@ export default function App() {
                 paused={practicePaused}
                 sessionState={displayState}
                 docked={promptDocked}
-                hasAttempt={!!lastRecordingUrl}
+                hasAttempt={!!lastRecordingUrl || lastRecordingFrames.length > 0}
                 onDockToggle={() => setPromptDocked((docked) => !docked)}
                 onStart={handlePracticePauseToggle}
+                onSkip={handleSkip}
                 onRetry={handleRetry}
               />
               <div className="flex min-w-0 flex-col gap-2">

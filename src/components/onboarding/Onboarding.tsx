@@ -90,7 +90,7 @@ export function Onboarding({ onComplete }: Props) {
   const isFinalPanel = index === COUNT - 1;
 
   const hintText = isFinalPanel
-    ? "Drag · slide · arrow → · Space"
+    ? "Arrow → · Space · Enter"
     : stream
     ? "← swipe your hand · drag · arrows →"
     : "Drag · arrows →";
@@ -102,6 +102,21 @@ export function Onboarding({ onComplete }: Props) {
     }
     gatedSetIndex((i) => i + 1);
   }, [gatedSetIndex, handleBegin, isFinalPanel]);
+
+  useEffect(() => {
+    if (!isFinalPanel || exiting) return;
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== " " && e.key !== "Enter" && e.key !== "ArrowRight" && e.key !== "PageDown") {
+        return;
+      }
+      e.preventDefault();
+      handleBegin();
+    }
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [exiting, handleBegin, isFinalPanel]);
 
   const pips = Array.from({ length: COUNT }, (_, i) => (
     <span key={i} className={`ob-pip${i === index ? " on" : ""}`} />

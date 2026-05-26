@@ -88,6 +88,8 @@ export function WordPicker({ vocab, onStart }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [activeCategories, setActiveCategories] = useState<VocabCategory[]>([]);
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const selectedIndices = useMemo(() => Array.from(selectedSet), [selectedSet]);
+  const selectedCount = selectedIndices.length;
   const activeCategorySet = useMemo(() => new Set(activeCategories), [activeCategories]);
   const displayVocab = useMemo(() => {
     const entries = sortByCategory(vocab.map((item, index) => ({ item, index })));
@@ -107,22 +109,27 @@ export function WordPicker({ vocab, onStart }: Props) {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const clearSelected = () => {
+    setSelected([]);
+  };
+
   const toggleCategory = (category: VocabCategory) => {
     const categoryIndices = vocab
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => item.category === category)
       .map(({ index }) => index);
-
     const isActive = activeCategories.includes(category);
+    const nextActiveCategories = isActive
+      ? activeCategories.filter((c) => c !== category)
+      : [...activeCategories, category];
 
-    setActiveCategories((current) =>
-      isActive ? current.filter((c) => c !== category) : [...current, category]
-    );
+    setActiveCategories(nextActiveCategories);
 
     setSelected((current) => {
-      if (isActive) return current.filter((i) => !categoryIndices.includes(i));
-      const added = categoryIndices.filter((i) => !current.includes(i));
-      return [...current, ...added];
+      if (isActive) return current.filter((index) => !categoryIndices.includes(index));
+      if (activeCategories.length === 0) return categoryIndices;
+      const added = categoryIndices.filter((index) => !current.includes(index));
+      return Array.from(new Set([...current, ...added]));
     });
   };
 
@@ -130,7 +137,7 @@ export function WordPicker({ vocab, onStart }: Props) {
     setSelected((current) =>
       current.includes(index)
         ? current.filter((item) => item !== index)
-        : [...current, index]
+        : Array.from(new Set([...current, index]))
     );
   };
 
@@ -169,15 +176,8 @@ export function WordPicker({ vocab, onStart }: Props) {
 
       <div className="flex items-center justify-between border-y border-slate-700/70 py-3">
         <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
-          {selected.length === 0 ? "None selected" : `${selected.length} selected`}
+          {selectedCount === 0 ? "None selected" : `${selectedCount} selected`}
         </span>
-        <button
-          onClick={() => setSelected([])}
-          disabled={selected.length === 0}
-          className="text-xs text-slate-500 transition-colors hover:text-slate-300 disabled:opacity-40"
-        >
-          Clear
-        </button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -204,11 +204,11 @@ export function WordPicker({ vocab, onStart }: Props) {
         })}
       </div>
 
-      <div className={`min-h-0 flex-1 overflow-y-auto pr-1 ${selected.length > 0 ? "pb-28" : ""}`}>
+      <div className={`min-h-0 flex-1 overflow-y-auto pr-1 ${selectedCount > 0 ? "pb-28" : ""}`}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {displayVocab.map(({ item, index }) => {
             const isSelected = selectedSet.has(index);
-            const isDisabled = !isSelected && selected.length >= LESSON_SIZE;
+            const isDisabled = !isSelected && selectedCount >= LESSON_SIZE;
 
             return (
               <button
@@ -231,24 +231,33 @@ export function WordPicker({ vocab, onStart }: Props) {
         </div>
       </div>
 
-      {selected.length > 0 && (
+      {selectedCount > 0 && (
         <div
           className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 justify-center px-5 md:px-8"
         >
-          <button
-            type="button"
-            onClick={() => onStart(selected)}
-            className="pointer-events-auto inline-flex items-center justify-center rounded-xl border px-8 py-3 text-sm font-semibold transition-colors hover:brightness-110"
-            style={{
-              background: "oklch(0.94 0.042 85)",
-              borderColor: "oklch(0.94 0.042 85)",
-              color: "oklch(0.18 0.024 260)",
-            }}
-          >
-            <span className="-translate-y-px">
-              {selected.length === 1 ? "Start" : `Start · ${selected.length}`}
-            </span>
-          </button>
+          <div className="pointer-events-auto flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onStart(selectedIndices)}
+              className="inline-flex items-center justify-center rounded-xl border px-8 py-3 text-sm font-semibold shadow-2xl transition-colors hover:brightness-110"
+              style={{
+                background: "oklch(0.94 0.042 85)",
+                borderColor: "oklch(0.94 0.042 85)",
+                color: "oklch(0.18 0.024 260)",
+              }}
+            >
+              <span className="-translate-y-px">
+                {`Start with ${selectedCount}`}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={clearSelected}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-700/80 bg-slate-950/50 px-4 py-2 text-xs font-semibold text-slate-200 shadow-xl backdrop-blur transition-colors hover:bg-slate-800/75"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       )}
 

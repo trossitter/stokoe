@@ -76,10 +76,12 @@ export function RecordingReview({
   const mediaKey = url ?? frames[0] ?? "";
   const [pauseState, setPauseState] = useState({ mediaKey: "", paused: false });
   const [frameState, setFrameState] = useState({ mediaKey: "", index: 0 });
+  const [videoState, setVideoState] = useState({ mediaKey: "", ready: false, failed: false });
   const [speed, setSpeed] = useState(1.0);
   const speedIndex = SPEED_STEPS.indexOf(speed);
   const hasVideo = !!url;
-  const hasFrameFallback = !hasVideo && frames.length > 0;
+  const videoFailed = videoState.mediaKey === mediaKey && videoState.failed;
+  const hasFrameFallback = (!hasVideo || videoFailed) && frames.length > 0;
   const paused = pauseState.mediaKey === mediaKey ? pauseState.paused : false;
   const frameIndex = frameState.mediaKey === mediaKey && frames.length > 0 ? frameState.index % frames.length : 0;
   const setPaused = (next: boolean | ((current: boolean) => boolean)) => {
@@ -109,6 +111,7 @@ export function RecordingReview({
   };
 
   useEffect(() => {
+    if (!hasVideo || videoFailed) return;
     const video = videoRef.current;
     if (!video) return;
 
@@ -119,7 +122,22 @@ export function RecordingReview({
     } else {
       video.play().catch(() => {});
     }
-  }, [practicePaused, speed, url]);
+  }, [hasVideo, practicePaused, speed, url, videoFailed]);
+
+  useEffect(() => {
+    if (!hasVideo || frames.length === 0) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setVideoState((current) => {
+        if (current.mediaKey === mediaKey && (current.ready || current.failed)) {
+          return current;
+        }
+        return { mediaKey, ready: false, failed: true };
+      });
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [frames.length, hasVideo, mediaKey]);
 
   useEffect(() => {
     if (!hasFrameFallback || practicePaused || paused || frames.length <= 1) return;
@@ -170,7 +188,7 @@ export function RecordingReview({
       aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       <span className="absolute left-5 top-4 z-20 text-xs font-medium text-slate-300">Your attempt</span>
-      {hasVideo ? (
+      {hasVideo && !videoFailed ? (
         <video
           key={url}
           ref={videoRef}
@@ -182,10 +200,12 @@ export function RecordingReview({
           onPlay={() => setPaused(false)}
           onPause={() => setPaused(true)}
           onCanPlay={() => {
+            setVideoState({ mediaKey, ready: true, failed: false });
             if (videoRef.current) {
               videoRef.current.playbackRate = speed;
             }
           }}
+          onError={() => setVideoState({ mediaKey, ready: false, failed: true })}
           style={{
             width: "100%",
             height: "100%",

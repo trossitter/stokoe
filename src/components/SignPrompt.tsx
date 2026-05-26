@@ -6,11 +6,13 @@ type Props = {
   sessionState: "idle" | "recording" | "evaluating" | "result";
   onRecord: () => void;
   onNext: () => void;
+  onSkip: () => void;
   onRetry: () => void;
   passed: boolean | null;
   vocabIndex: number;
   vocabTotal: number;
   paused?: boolean;
+  recordingIssue?: boolean;
 };
 
 export function SignPrompt({
@@ -18,11 +20,13 @@ export function SignPrompt({
   sessionState,
   onRecord,
   onNext,
+  onSkip,
   onRetry,
   passed,
   vocabIndex,
   vocabTotal,
   paused = false,
+  recordingIssue = false,
 }: Props) {
   const mastery = masteryLevel(record);
 
@@ -72,57 +76,70 @@ export function SignPrompt({
       </div>
 
       {!(sessionState === "idle" && paused) && (
-      <div className="mt-4 flex gap-2 min-h-[48px]">
-        {sessionState === "idle" && !paused && (
+        <div className="mt-4 flex gap-2 min-h-[48px]">
+          {sessionState === "idle" && !paused && (
             <div className="flex-1">
-              <button
-                onClick={onRecord}
-                className="w-full py-3 rounded-xl border text-sm font-medium transition-colors"
-                style={{
-                  background: "oklch(0.94 0.042 85)",
-                  borderColor: "oklch(0.94 0.042 85)",
-                  color: "oklch(0.18 0.024 260)",
-                }}
-              >
-                Record attempt
-              </button>
+              {recordingIssue && (
+                <p className="mb-2 rounded-lg border border-amber-400/25 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
+                  Playback was unavailable for that attempt.
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={onRecord}
+                  className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors"
+                  style={{
+                    background: "oklch(0.94 0.042 85)",
+                    borderColor: "oklch(0.94 0.042 85)",
+                    color: "oklch(0.18 0.024 260)",
+                  }}
+                >
+                  {recordingIssue ? "Try again" : "Record attempt"}
+                </button>
+                <button
+                  onClick={onSkip}
+                  className="flex-1 rounded-xl border border-slate-700 py-3 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800/70"
+                >
+                  Skip
+                </button>
+              </div>
             </div>
-        )}
-        {sessionState === "recording" && (
-          <div className="flex-1 py-3 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-medium text-center">
-            Recording your sign…
-          </div>
-        )}
-        {sessionState === "evaluating" && (
-          <div className="flex-1 py-3 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-400 text-sm font-medium text-center">
-            Evaluating…
-          </div>
-        )}
-        {sessionState === "result" && (
-          <div className="flex-1 flex flex-col gap-1.5">
-            <div className="flex gap-2">
-              <button
-                onClick={onRetry}
-                className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-800/70 transition-colors"
-              >
-                Try again
-              </button>
-              <button
-                onClick={onNext}
-                className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors hover:brightness-110"
-                style={{
-                  background: "oklch(0.94 0.042 85)",
-                  borderColor: "oklch(0.94 0.042 85)",
-                  color: "oklch(0.18 0.024 260)",
-                }}
-              >
-                Next →
-              </button>
+          )}
+          {sessionState === "recording" && (
+            <div className="flex-1 py-3 rounded-xl bg-red-900/40 border border-red-700 text-red-300 text-sm font-medium text-center">
+              Recording your sign…
             </div>
-            <p className="text-center text-xs text-slate-500">← swipe your hand to navigate →</p>
-          </div>
-        )}
-      </div>
+          )}
+          {sessionState === "evaluating" && (
+            <div className="flex-1 py-3 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-400 text-sm font-medium text-center">
+              Evaluating…
+            </div>
+          )}
+          {sessionState === "result" && (
+            <div className="flex-1 flex flex-col gap-1.5">
+              <div className="flex gap-2">
+                <button
+                  onClick={onRetry}
+                  className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-800/70 transition-colors"
+                >
+                  Try again
+                </button>
+                <button
+                  onClick={onNext}
+                  className="flex-1 py-3 rounded-xl border text-sm font-medium transition-colors hover:brightness-110"
+                  style={{
+                    background: "oklch(0.94 0.042 85)",
+                    borderColor: "oklch(0.94 0.042 85)",
+                    color: "oklch(0.18 0.024 260)",
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+              <p className="text-center text-xs text-slate-500">← swipe your hand to navigate →</p>
+            </div>
+          )}
+        </div>
       )}
     </section>
   );

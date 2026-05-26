@@ -11,7 +11,7 @@ type Props = {
   ready: boolean;
 };
 
-const EMPTY_CHIPS = { lens: false, light: false, frame: false, hand: false };
+const EMPTY_CHIPS = { lens: false, light: false, frame: false };
 
 export function PanelFraming({ stream, active, onAllow, onClose, error, onReady, ready }: Props) {
   const [chips, setChips] = useState(EMPTY_CHIPS);
@@ -22,12 +22,11 @@ export function PanelFraming({ stream, active, onAllow, onClose, error, onReady,
     const t1 = setTimeout(() => setChips((c) => ({ ...c, lens: true })), 250);
     const t2 = setTimeout(() => setChips((c) => ({ ...c, light: true })), 1100);
     const t3 = setTimeout(() => setChips((c) => ({ ...c, frame: true })), 1900);
-    const t4 = setTimeout(() => setChips((c) => ({ ...c, hand: true })), 2900);
-    return () => [t0, t1, t2, t3, t4].forEach(clearTimeout);
+    return () => [t0, t1, t2, t3].forEach(clearTimeout);
   }, [active, stream]);
 
   useEffect(() => {
-    if (stream && chips.lens && chips.light && chips.frame && chips.hand) onReady();
+    if (stream && chips.lens && chips.light && chips.frame) onReady();
   }, [chips, onReady, stream]);
 
   const apState = !stream || error ? "closed" : ready ? "open" : "opening";
@@ -71,9 +70,6 @@ export function PanelFraming({ stream, active, onAllow, onClose, error, onReady,
             </span>
             <span className={`ob-chip${visibleChips.frame ? " is-on" : ""}`}>
               <span className="ob-chip-ok" /> Framing
-            </span>
-            <span className={`ob-chip${visibleChips.hand ? " is-on" : ""}`}>
-              <span className="ob-chip-ok" /> Hand acquired
             </span>
           </div>
           <div className="ob-micro" style={{ marginTop: 36 }}>

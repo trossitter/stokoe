@@ -1,5 +1,4 @@
 import { MoteField } from "../MoteField";
-import { SwipeTrack } from "../SwipeTrack";
 
 type Props = {
   onCommit: () => void;
@@ -14,7 +13,15 @@ export function PanelBegin({ onCommit, active = false }: Props) {
         <h2 className="ob-h-mega" style={{ maxWidth: "16ch", marginBottom: 64 }}>
           Knowledge is <span className="ob-it">power.</span>
         </h2>
-        <SwipeTrack onCommit={onCommit} active={active} label="Swipe to begin" finishedLabel="Beginning" />
+        <button
+          type="button"
+          className="ob-pill"
+          data-no-drag
+          disabled={!active}
+          onClick={onCommit}
+        >
+          Begin signing
+        </button>
         <div className="ob-micro" style={{ marginTop: 28 }}>
           Or press <span style={{ color: "var(--fg-mute)" }}>Space</span> · <span style={{ color: "var(--fg-mute)" }}>Enter</span> · <span style={{ color: "var(--fg-mute)" }}>Arrow</span>
         </div>

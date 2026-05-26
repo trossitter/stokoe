@@ -147,7 +147,7 @@ export function WebcamView({
         frameInterval = null;
       }
       stopRecorder();
-      if (!recorder && replayFrames.length > 0) {
+      if (replayFrames.length > 0) {
         onRecordingFramesReadyRef.current?.(replayFrames);
       }
       setRecordingCueState("idle");
