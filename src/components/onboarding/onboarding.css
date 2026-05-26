@@ -346,12 +346,12 @@
   justify-content: center;
 }
 .ob-welcome-quote {
-  margin-top: 64px;
-  max-width: 760px;
+  margin-top: 72px;
+  max-width: 920px;
   color: var(--fg-faint);
   font-family: "JetBrains Mono", monospace;
-  font-size: 13px;
-  line-height: 1.75;
+  font-size: 20px;
+  line-height: 1.65;
   letter-spacing: 0.02em;
 }
 
@@ -537,6 +537,13 @@
   left: 18px;
   color: var(--fg-faint);
 }
+.ob-practice-preview-movement .ob-mini-video-label {
+  color: color-mix(in oklch, var(--fg) 92%, var(--accent));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 12px color-mix(in oklch, var(--fg) 22%, transparent);
+}
 .ob-mini-video-chip {
   left: 18px;
   bottom: 18px;
@@ -554,6 +561,10 @@
 }
 .ob-mini-video-figure .ob-primitive {
   max-width: 100%;
+}
+.ob-practice-preview-movement .ob-mini-video-figure .ob-primitive g[stroke="var(--rule)"] {
+  stroke: color-mix(in oklch, var(--fg-mute) 60%, var(--rule));
+  stroke-width: 1.45;
 }
 .ob-attempt-figure {
   position: relative;
@@ -691,7 +702,9 @@
   }
 
   .ob-welcome-quote {
-    font-size: 12px;
+    margin-top: 44px;
+    font-size: 16px;
+    line-height: 1.65;
     max-width: 100%;
   }
 

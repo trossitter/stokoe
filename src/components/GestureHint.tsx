@@ -33,7 +33,7 @@ export function GestureHint({ gesture, dwellProgress, displayState }: Props) {
   const nextActive = gesture === "next";
   const retryActive = gesture === "retry";
   const nextLabel = "Next";
-  const retryLabel = "Retry";
+  const retryLabel = "Attempt";
   const chipStyle = (active: boolean): React.CSSProperties => ({
     ...chipBase,
     ...(isIdle && !active ? chipPassiveIdle : {}),

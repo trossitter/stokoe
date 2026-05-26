@@ -14,7 +14,11 @@ export function PanelWelcome() {
         <div className="ob-lede" style={{ marginTop: 40 }}>
           <p style={{ margin: 0 }}>Learn American Sign Language.</p>
           <p style={{ margin: "8px 0 0" }}>Receive feedback on what your hands actually did.</p>
-          <div className="ob-welcome-terms" aria-label="Handshape, movement, and location">
+          <div className="ob-welcome-terms" aria-label="Location, handshape, and movement">
+            <span>
+              <strong>Location.</strong>
+              <small>TAB</small>
+            </span>
             <span>
               <strong>Handshape.</strong>
               <small>DEZ</small>
@@ -22,10 +26,6 @@ export function PanelWelcome() {
             <span>
               <strong>Movement.</strong>
               <small>SIG</small>
-            </span>
-            <span>
-              <strong>Location.</strong>
-              <small>TAB</small>
             </span>
           </div>
         </div>
