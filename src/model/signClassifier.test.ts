@@ -23,6 +23,8 @@ vi.mock("./dezPredictor", () => ({
 
 import { verifyNotation } from "./notationVerifier";
 import { classifyAttempt } from "./signClassifier";
+import { NOTATION } from "../data/notation";
+import { VOCAB } from "../data/vocab";
 
 const mockVerify = vi.mocked(verifyNotation);
 
@@ -37,6 +39,14 @@ beforeEach(() => {
 });
 
 describe("classifyAttempt — sign exists in NOTATION map", () => {
+  it("has notation for every vocab item", () => {
+    const missing = VOCAB
+      .filter(({ id }) => !NOTATION[id])
+      .map(({ id }) => id);
+
+    expect(missing).toEqual([]);
+  });
+
   it("returns passed=true and hintKey=null when verifyNotation resolves passed", async () => {
     mockVerify.mockResolvedValue({ passed: true, failedParameter: null, confidence: 0.9 });
 
@@ -46,6 +56,14 @@ describe("classifyAttempt — sign exists in NOTATION map", () => {
     expect(result.hintKey).toBeNull();
     expect(result.confidence).toBeGreaterThanOrEqual(0);
     expect(result.confidence).toBeLessThanOrEqual(1);
+  });
+
+  it("routes BATHROOM through notation verification", async () => {
+    mockVerify.mockResolvedValue({ passed: true, failedParameter: null, confidence: 0.8 });
+
+    await classifyAttempt(makeFrames(3), "bathroom");
+
+    expect(mockVerify).toHaveBeenCalled();
   });
 
   it("returns passed=false and hintKey='movement' when sig fails", async () => {

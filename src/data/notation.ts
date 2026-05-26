@@ -63,6 +63,11 @@ export const NOTATION: Record<string, NotationEntry> = {
     tab: "0", dez: "H", orientation: "f", sig: "Dz",
     readable: "Two fingers in neutral space, snap closed",
   },
+  "bathroom": {
+    ascii: "0AfDg",
+    tab: "0", dez: "A", orientation: "f", sig: "Dg",
+    readable: "T-hand in neutral space, side-to-side wrist shake",
+  },
   "good": {
     ascii: "UBaDf",
     tab: "U", dez: "B", orientation: "a", sig: "Df",
