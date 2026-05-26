@@ -269,9 +269,11 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
               >
                 Read a tiny story.
               </h3>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
-                Goldilocks is sourced from a Stokoe corpus sample. Red Riding Hood and Cinderella are constructed with AI for practice; please verify against a signed or published corpus before citation.
-              </p>
+              {activePassage.entries.some((e) => e.status === "constructed") && (
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
+                  Constructed with AI for practice. Please verify against a signed or published corpus before citation.
+                </p>
+              )}
             </div>
 
           <div className="flex flex-wrap gap-2">

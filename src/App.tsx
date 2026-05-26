@@ -238,6 +238,7 @@ export default function App() {
   const [gestureConfirmation, setGestureConfirmation] = useState<GestureConfirmation | null>(null);
   const [recordRequestId, setRecordRequestId] = useState(0);
   const [bonusVocab, setBonusVocab] = useState<VocabItem[]>(() => bonusPreview ? VOCAB.slice(0, 5) : []);
+  const [lastRecordingFrames, setLastRecordingFrames] = useState<string[]>([]);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => searchParams.has("onboarding")
   );
@@ -301,9 +302,26 @@ export default function App() {
   );
 
   const handleRecordingReady = useCallback((url: string) => {
+    setLastRecordingFrames([]);
     setLastRecordingUrl(prev => {
       if (prev) URL.revokeObjectURL(prev);
       return url;
+    });
+  }, []);
+
+  const handleRecordingFramesReady = useCallback((frames: string[]) => {
+    setLastRecordingFrames(frames);
+    setLastRecordingUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
+
+  const clearLastRecording = useCallback(() => {
+    setLastRecordingFrames([]);
+    setLastRecordingUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
     });
   }, []);
 
@@ -323,11 +341,8 @@ export default function App() {
       gestureConfirmationTimerRef.current = null;
     }
     setRecordRequestId(0);
-    setLastRecordingUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-  }, []);
+    clearLastRecording();
+  }, [clearLastRecording]);
 
   const showGestureConfirmation = useCallback((label: GestureConfirmation) => {
     if (gestureConfirmationTimerRef.current) {
@@ -406,12 +421,13 @@ export default function App() {
 
   const handleRecordAttempt = useCallback(() => {
     if (!practiceStarted || practicePaused || sessionState !== "idle") return;
+    clearLastRecording();
     setPassed(null);
     setConfidence(null);
     setHintKey(null);
     setSessionState("recording");
     setRecordRequestId((id) => id + 1);
-  }, [practicePaused, practiceStarted, sessionState]);
+  }, [clearLastRecording, practicePaused, practiceStarted, sessionState]);
 
   const startBonusRound = useCallback(() => {
     const sessionIndices = lessonOrder ?? activeOrder;
@@ -436,14 +452,16 @@ export default function App() {
     setPassed(null); setConfidence(null); setHintKey(null);
     setVideoHidden(true);
     setSessionState("idle");
-  }, [activeOrder.length, lessonOrder, startBonusRound, vocabIndex]);
+    clearLastRecording();
+  }, [activeOrder.length, clearLastRecording, lessonOrder, startBonusRound, vocabIndex]);
 
   const handlePrev = useCallback(() => {
     setVocabIndex((i) => Math.max(0, i - 1));
     setPassed(null); setConfidence(null); setHintKey(null);
     setVideoHidden(true);
     setSessionState("idle");
-  }, []);
+    clearLastRecording();
+  }, [clearLastRecording]);
 
   const handleRetry = useCallback(() => {
     setPassed(null); setConfidence(null); setHintKey(null);
@@ -554,8 +572,9 @@ export default function App() {
         {gestureConfirmationOverlay}
       </>
     );
-  const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && !!lastRecordingUrl;
+  const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && (!!lastRecordingUrl || lastRecordingFrames.length > 0);
   const gestureTooltipVisible = displayState === "result" && !showTutorial && !showWordPicker;
+  const selfViewToggleVisible = promptDocked || displayState === "recording" || displayState === "evaluating";
 
   return (
     <div
@@ -692,18 +711,22 @@ export default function App() {
                       recordRequestId={recordRequestId}
                       onFramesReady={handleFramesReady}
                       onRecordingReady={handleRecordingReady}
+                      onRecordingFramesReady={handleRecordingFramesReady}
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
+                      showToggleButton={selfViewToggleVisible}
                       overlay={practiceOverlay}
                     />
                   )}
                 </div>
-                {reviewVisible && lastRecordingUrl && (
+                {reviewVisible && (
                   <div className="absolute inset-0 flex">
                     <RecordingReview
                       url={lastRecordingUrl}
+                      frames={lastRecordingFrames}
                       paused={practicePaused}
                       hidden={userVideoHidden}
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
+                      showToggleButton={selfViewToggleVisible}
                       overlay={
                         <>
                           {gestureHint}

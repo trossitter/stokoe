@@ -107,8 +107,15 @@ export function Onboarding({ onComplete }: Props) {
     <span key={i} className={`ob-pip${i === index ? " on" : ""}`} />
   ));
 
+  const handleRootClick = useCallback((e: React.MouseEvent) => {
+    if (exiting) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, input, select, textarea")) return;
+    if (e.clientX > window.innerWidth / 2) handleForward();
+  }, [exiting, handleForward]);
+
   return (
-    <div className="ob-root">
+    <div className="ob-root" onClick={handleRootClick}>
       {/* Hidden video — feeds MediaPipe hand swipe detection once stream is live */}
       <video ref={hiddenVideoRef} style={{ display: "none" }} muted playsInline />
 

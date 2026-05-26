@@ -1,12 +1,15 @@
 import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1.0];
+const FALLBACK_FRAME_MS = 100;
 
 type Props = {
-  url: string;
+  url?: string | null;
+  frames?: string[];
   paused?: boolean;
   hidden?: boolean;
   onToggleHidden: () => void;
+  showToggleButton?: boolean;
   overlay?: ReactNode;
 };
 
@@ -24,7 +27,7 @@ function SelfViewToggleButton({
         event.stopPropagation();
         onToggleHidden();
       }}
-      className="absolute bottom-3 right-3 z-30 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
+      className="absolute bottom-3 right-3 z-50 rounded-md border border-white/10 bg-black/50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/70"
       aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       {hidden ? "Show" : "Hide"}
@@ -64,17 +67,39 @@ function SpeedStepButton({
 
 export function RecordingReview({
   url,
+  frames = [],
   paused: practicePaused = false,
   hidden = false,
   onToggleHidden,
+  showToggleButton = true,
   overlay,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(false);
+  const mediaKey = url ?? frames[0] ?? "";
+  const [pauseState, setPauseState] = useState({ mediaKey: "", paused: false });
+  const [frameState, setFrameState] = useState({ mediaKey: "", index: 0 });
   const [speed, setSpeed] = useState(1.0);
   const speedIndex = SPEED_STEPS.indexOf(speed);
+  const hasVideo = !!url;
+  const hasFrameFallback = !hasVideo && frames.length > 0;
+  const paused = pauseState.mediaKey === mediaKey ? pauseState.paused : false;
+  const frameIndex = frameState.mediaKey === mediaKey && frames.length > 0 ? frameState.index % frames.length : 0;
+  const setPaused = (next: boolean | ((current: boolean) => boolean)) => {
+    setPauseState((current) => {
+      const currentPaused = current.mediaKey === mediaKey ? current.paused : false;
+      return {
+        mediaKey,
+        paused: typeof next === "function" ? next(currentPaused) : next,
+      };
+    });
+  };
 
   const handlePlayPause = () => {
+    if (hasFrameFallback) {
+      setPaused((current) => !current);
+      return;
+    }
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -97,6 +122,20 @@ export function RecordingReview({
       video.play().catch(() => {});
     }
   }, [practicePaused, speed, url]);
+
+  useEffect(() => {
+    if (!hasFrameFallback || practicePaused || paused || frames.length <= 1) return;
+
+    const frameMs = Math.max(40, FALLBACK_FRAME_MS / speed);
+    const intervalId = window.setInterval(() => {
+      setFrameState((current) => {
+        const currentIndex = current.mediaKey === mediaKey ? current.index : 0;
+        return { mediaKey, index: (currentIndex + 1) % frames.length };
+      });
+    }, frameMs);
+
+    return () => window.clearInterval(intervalId);
+  }, [frames.length, hasFrameFallback, mediaKey, paused, practicePaused, speed]);
 
   const handleSpeedChange = (event: ChangeEvent<HTMLInputElement>) => {
     const index = Number(event.target.value);
@@ -133,31 +172,50 @@ export function RecordingReview({
       aria-label={hidden ? "Show self-view" : "Hide self-view"}
     >
       <span className="absolute left-5 top-4 z-20 text-xs font-medium text-slate-300">Your attempt</span>
-      <video
-        key={url}
-        ref={videoRef}
-        src={url}
-        autoPlay={!practicePaused}
-        loop
-        muted
-        playsInline
-        onPlay={() => setPaused(false)}
-        onPause={() => setPaused(true)}
-        onCanPlay={() => {
-          if (videoRef.current) {
-            videoRef.current.playbackRate = speed;
-          }
-        }}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          transform: "scaleX(-1)",
-          filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
-          opacity: hidden ? 0 : 1,
-          transition: "opacity 300ms ease",
-        }}
-      />
+      {hasVideo ? (
+        <video
+          key={url}
+          ref={videoRef}
+          src={url ?? undefined}
+          autoPlay={!practicePaused}
+          loop
+          muted
+          playsInline
+          onPlay={() => setPaused(false)}
+          onPause={() => setPaused(true)}
+          onCanPlay={() => {
+            if (videoRef.current) {
+              videoRef.current.playbackRate = speed;
+            }
+          }}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            transform: "scaleX(-1)",
+            filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
+            opacity: hidden ? 0 : 1,
+            transition: "opacity 300ms ease",
+          }}
+        />
+      ) : hasFrameFallback ? (
+        <img
+          src={frames[frameIndex] ?? frames[0]}
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            transform: "scaleX(-1)",
+            filter: "saturate(0.82) contrast(0.92) brightness(0.9)",
+            opacity: hidden ? 0 : 1,
+            transition: "opacity 300ms ease",
+          }}
+        />
+      ) : (
+        <div className="h-full w-full" />
+      )}
 
       {hidden && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80 px-6 text-center">
@@ -207,6 +265,7 @@ export function RecordingReview({
             max={SPEED_STEPS.length - 1}
             step={1}
             value={currentSpeedIndex}
+            onClick={(event) => event.stopPropagation()}
             onChange={handleSpeedChange}
             className="h-1 min-w-0 flex-1 cursor-pointer accent-slate-200"
             aria-label="Attempt playback speed"
@@ -223,7 +282,9 @@ export function RecordingReview({
         </div>
       </>
       )}
-      <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
+      {showToggleButton && (
+        <SelfViewToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
+      )}
       {overlay}
     </section>
   );
