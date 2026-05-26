@@ -107,7 +107,8 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
   );
   const [selectedId, setSelectedId] = useState(() => signs[0]?.id ?? "");
   const [activePassageId, setActivePassageId] = useState(() => NARRATIVE_PASSAGES[0]?.id ?? "");
-  const [showGlosses, setShowGlosses] = useState(false);
+  const [showGlosses, setShowGlosses] = useState(true);
+  const [stagedGloss, setStagedGloss] = useState<string | null>(null);
   const selected = signs.find((item) => item.id === selectedId) ?? signs[0];
   const notation = selected ? NOTATION[selected.id] : null;
   const activePassage = NARRATIVE_PASSAGES.find((passage) => passage.id === activePassageId) ?? NARRATIVE_PASSAGES[0];
@@ -269,7 +270,7 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
                 Read a tiny story.
               </h3>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
-                Constructed with AI for practice. Please verify against a signed or published corpus before citation.
+                Goldilocks is sourced from a Stokoe corpus sample. Red Riding Hood and Cinderella are constructed with AI for practice; please verify against a signed or published corpus before citation.
               </p>
             </div>
 
@@ -344,30 +345,55 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
                     {entry.beat}
                   </div>
                   <div>
-                    {canPractice ? (
-                      <button
-                        type="button"
-                        onClick={() => onPracticeSign(entry.notationId!)}
-                        className="group text-left outline-none"
-                        aria-label={`Practice ${entry.gloss}`}
-                      >
-                        <span
-                          className="text-2xl leading-tight transition-colors group-hover:text-slate-50 group-focus-visible:text-slate-50"
+                    {canPractice ? (() => {
+                      const entryKey = `${activePassage.id}-${entry.beat}-${entry.gloss}`;
+                      const isStaged = stagedGloss === entryKey;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isStaged) {
+                              onPracticeSign(entry.notationId!);
+                              setStagedGloss(null);
+                            } else {
+                              setStagedGloss(entryKey);
+                            }
+                          }}
+                          onBlur={() => { if (isStaged) setStagedGloss(null); }}
+                          className="rounded-lg px-2 py-0.5 text-left outline-none transition-all"
+                          aria-label={isStaged ? `Go to ${entry.gloss} in practice` : `Select ${entry.gloss}`}
                           style={{
-                            fontFamily: "'Newsreader', Georgia, serif",
-                            color: "oklch(0.94 0.042 85)",
+                            border: isStaged
+                              ? "1px solid oklch(0.94 0.042 85 / 0.55)"
+                              : "1px solid transparent",
+                            background: isStaged
+                              ? "oklch(0.94 0.042 85 / 0.10)"
+                              : "transparent",
                           }}
                         >
-                          {glossLabel}
-                        </span>
-                        <span
-                          className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 transition-colors group-hover:text-slate-300 group-focus-visible:text-slate-300"
-                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                        >
-                          Practice
-                        </span>
-                      </button>
-                    ) : (
+                          <span
+                            className="text-2xl leading-tight"
+                            style={{
+                              fontFamily: "'Newsreader', Georgia, serif",
+                              color: "oklch(0.94 0.042 85)",
+                            }}
+                          >
+                            {glossLabel}
+                          </span>
+                          {isStaged && (
+                            <span
+                              className="ml-2 text-[10px] uppercase tracking-[0.16em]"
+                              style={{
+                                fontFamily: "'JetBrains Mono', monospace",
+                                color: "oklch(0.94 0.042 85 / 0.7)",
+                              }}
+                            >
+                              → Practice
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })() : (
                       <span
                         className="text-2xl leading-tight"
                         style={{
