@@ -8,7 +8,7 @@ type Props = {
   onPracticeSign?: (id: string) => void;
 };
 
-type ParamKey = "tab" | "dez" | "orientation" | "sig";
+type ParamKey = "tab" | "dez" | "sig";
 
 type SymbolGroup = {
   title: string;
@@ -23,7 +23,6 @@ const PARAMS: Array<{
 }> = [
   { key: "tab", label: "Location", stokoeName: "TAB", plain: (item) => item.params.location },
   { key: "dez", label: "Handshape", stokoeName: "DEZ", plain: (item) => item.params.handshape },
-  { key: "orientation", label: "Orientation", stokoeName: "ORI", plain: (item) => item.params.orientation },
   { key: "sig", label: "Movement", stokoeName: "SIG", plain: (item) => item.params.movement },
 ];
 
@@ -109,6 +108,7 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
   const [activePassageId, setActivePassageId] = useState(() => NARRATIVE_PASSAGES[0]?.id ?? "");
   const [showGlosses, setShowGlosses] = useState(true);
   const [stagedGloss, setStagedGloss] = useState<string | null>(null);
+  const [showOrientation, setShowOrientation] = useState(false);
   const selected = signs.find((item) => item.id === selectedId) ?? signs[0];
   const notation = selected ? NOTATION[selected.id] : null;
   const activePassage = NARRATIVE_PASSAGES.find((passage) => passage.id === activePassageId) ?? NARRATIVE_PASSAGES[0];
@@ -192,7 +192,15 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
                 key={param.key}
                 className="grid gap-3 rounded-lg border border-slate-700/60 bg-slate-950/30 p-3 sm:grid-cols-[96px_96px_minmax(0,1fr)] sm:items-center"
               >
-                <div>
+                <button
+                  type="button"
+                  className={`text-left ${param.key === "dez" ? "cursor-pointer rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[oklch(0.94_0.042_85)]" : "cursor-default"}`}
+                  onClick={() => {
+                    if (param.key === "dez") setShowOrientation((value) => !value);
+                  }}
+                  aria-expanded={param.key === "dez" ? showOrientation : undefined}
+                  disabled={param.key !== "dez"}
+                >
                   <div
                     className="text-[10px] uppercase tracking-[0.18em] text-slate-500"
                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -200,11 +208,18 @@ export function NotationLab({ vocab, onPracticeSign }: Props) {
                     {param.stokoeName}
                   </div>
                   <div className="text-sm font-semibold text-slate-200">{param.label}</div>
-                </div>
+                </button>
                 <div className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-center">
                   <Glyph>{notation[param.key]}</Glyph>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-300">{param.plain(selected)}</p>
+                <p className="text-sm leading-relaxed text-slate-300">
+                  {param.plain(selected)}
+                  {param.key === "dez" && showOrientation && (
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                      Orientation: {selected.params.orientation}
+                    </span>
+                  )}
+                </p>
               </div>
             ))}
           </div>
