@@ -10,17 +10,10 @@ export function PanelFeedback() {
   return (
     <section className="ob-panel">
       <div className="ob-pad" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="ob-micro" style={{ marginBottom: 34 }}>Preview · Reference and answer</div>
+        <div className="ob-micro" style={{ marginBottom: 34 }}>Preview · Answer and reference</div>
         <div className="ob-feedback-layout">
           <div className="ob-practice-preview ob-practice-preview-movement" data-no-drag>
             <div className="ob-video-pair">
-              <div className="ob-mini-video">
-                <div className="ob-mini-video-label">Reference</div>
-                <div className="ob-mini-video-figure">
-                  <SignPrimitive kind="move" />
-                </div>
-                <div className="ob-mini-video-chip">Smooth arc</div>
-              </div>
               <div className="ob-mini-video ob-mini-video-muted">
                 <div className="ob-mini-video-label">Your attempt</div>
                 <div className="ob-attempt-figure" aria-hidden="true">
@@ -30,6 +23,13 @@ export function PanelFeedback() {
                   <span className="ob-attempt-path" />
                 </div>
                 <div className="ob-mini-video-chip">Too quick</div>
+              </div>
+              <div className="ob-mini-video">
+                <div className="ob-mini-video-label">Reference</div>
+                <div className="ob-mini-video-figure">
+                  <SignPrimitive kind="move" />
+                </div>
+                <div className="ob-mini-video-chip">Smooth arc</div>
               </div>
             </div>
           </div>

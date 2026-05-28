@@ -69,12 +69,16 @@ export function BonusRound({
   const [optionsVisible, setOptionsVisible] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [score, setScore] = useState(0);
-  const [answered, setAnswered] = useState(0);
 
   const currentQuestion = questionOrder[questionIndex] ?? null;
   const totalQuestions = questionOrder.length;
   const videoUrl = currentQuestion ? getVideoUrl(currentQuestion) : null;
   const ShellTag = embedded ? "div" : "main";
+  const plannedQuestionTotal = Math.min(QUESTION_LIMIT, playableVocab.length);
+  const scoreTotal = totalQuestions || plannedQuestionTotal;
+  const roundStatus = mode === "question" && totalQuestions > 0
+    ? `question: ${questionIndex + 1}/${totalQuestions}`
+    : `round: ${plannedQuestionTotal} sign${plannedQuestionTotal === 1 ? "" : "s"}`;
 
   const clearTimers = useCallback(() => {
     if (revealTimerRef.current) {
@@ -115,7 +119,6 @@ export function BonusRound({
     const nextOrder = shuffle(playableVocab).slice(0, QUESTION_LIMIT);
     setQuestionOrder(nextOrder);
     setScore(0);
-    setAnswered(0);
     if (nextOrder.length === 0) {
       setMode("summary");
       return;
@@ -133,7 +136,6 @@ export function BonusRound({
     const correct = item.id === currentQuestion.id;
     setSelectedId(item.id);
     setOptionsVisible(true);
-    setAnswered((count) => count + 1);
     if (correct) {
       setScore((value) => value + 1);
     }
@@ -197,7 +199,13 @@ export function BonusRound({
                 className="rounded-full border border-slate-700/70 bg-slate-950/30 px-3 py-2 text-xs uppercase tracking-[0.16em] text-slate-300"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
-                score: {score}/{answered}
+                {roundStatus}
+              </span>
+              <span
+                className="rounded-full border border-slate-700/70 bg-slate-950/30 px-3 py-2 text-xs uppercase tracking-[0.16em] text-slate-300"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                score: {score}/{scoreTotal}
               </span>
               <button
                 type="button"
@@ -226,7 +234,7 @@ export function BonusRound({
                   Want a recognition round?
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300">
-                  Watch each sign first, then choose its gloss. It is optional and separate from production practice.
+                  Watch {plannedQuestionTotal} sign{plannedQuestionTotal === 1 ? "" : "s"} first, then choose each gloss. It is optional and separate from production practice.
                 </p>
                 <div className="mt-7 flex justify-center">
                   <button

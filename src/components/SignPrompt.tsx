@@ -47,7 +47,7 @@ export function SignPrompt({
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs text-slate-500 uppercase tracking-wide">Practice set</span>
             <span className="text-xs text-slate-600">·</span>
-            <span className="text-xs text-slate-500">{vocabIndex + 1} / {vocabTotal}</span>
+            <span className="text-xs text-slate-500">Sign {vocabIndex + 1} / {vocabTotal}</span>
             {mastery === "mastered" && (
               <span className="text-xs bg-emerald-900/40 text-emerald-300 border border-emerald-700 rounded-full px-2 py-0.5">Mastered</span>
             )}

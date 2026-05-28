@@ -830,7 +830,7 @@ export default function App() {
               recordingIssue={recordingIssue}
               recordingCueState={recordingCueState}
             />
-            {/* Reference + attempt side by side, matching the onboarding preview order. */}
+            {/* Signer + reference side by side, matching the onboarding preview order. */}
             <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-1 md:grid-cols-2">
               <PromptFocusOverlay
                 item={item}
@@ -842,12 +842,6 @@ export default function App() {
                 onStart={handlePracticePauseToggle}
                 onSkip={handleSkip}
                 onRetry={handleRetry}
-              />
-              <SignVideo
-                item={item}
-                hidden={videoHidden}
-                paused={practicePaused}
-                onToggleHidden={() => setVideoHidden((hidden) => !hidden)}
               />
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="relative aspect-[4/3] w-full min-h-0">
@@ -894,6 +888,12 @@ export default function App() {
                 <GestureTooltip visible={gestureTooltipVisible} />
                 </div>
               </div>
+              <SignVideo
+                item={item}
+                hidden={videoHidden}
+                paused={practicePaused}
+                onToggleHidden={() => setVideoHidden((hidden) => !hidden)}
+              />
             </div>
           </div>
         </main>
