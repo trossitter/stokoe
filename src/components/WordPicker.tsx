@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { VocabCategory, VocabItem } from "../data/vocab";
 
 const LESSON_SIZE = 10;
+const DECIDE_FOR_ME_SIZE = 3;
 const CATEGORY_ORDER: VocabCategory[] = [
   "Essentials",
   "Actions",
@@ -51,9 +52,9 @@ function sortByCategory(entries: IndexedVocabItem[]): IndexedVocabItem[] {
   return [...entries].sort((a, b) => compareCategory(a.item.category, b.item.category) || a.index - b.index);
 }
 
-function buildBalancedLessonIndices(vocab: VocabItem[]): number[] {
+function buildBalancedLessonIndices(vocab: VocabItem[], lessonSize = LESSON_SIZE): number[] {
   const entries = vocab.map((item, index) => ({ item, index }));
-  const groups = groupByCategory(entries).filter(([category]) => category !== "Numbers");
+  const groups = shuffle(groupByCategory(entries).filter(([category]) => category !== "Numbers"));
   const picked: number[] = [];
   const remainingByCategory = new Map<VocabCategory, IndexedVocabItem[]>();
 
@@ -64,9 +65,10 @@ function buildBalancedLessonIndices(vocab: VocabItem[]): number[] {
       picked.push(first.index);
     }
     remainingByCategory.set(category, shuffledEntries);
+    if (picked.length >= lessonSize) break;
   }
 
-  while (picked.length < LESSON_SIZE) {
+  while (picked.length < lessonSize) {
     let added = false;
     for (const [category] of shuffle(groups)) {
       const remaining = remainingByCategory.get(category) ?? [];
@@ -74,12 +76,12 @@ function buildBalancedLessonIndices(vocab: VocabItem[]): number[] {
       if (!next) continue;
       picked.push(next.index);
       added = true;
-      if (picked.length >= LESSON_SIZE) break;
+      if (picked.length >= lessonSize) break;
     }
     if (!added) break;
   }
 
-  return shuffle(picked).slice(0, LESSON_SIZE);
+  return shuffle(picked).slice(0, lessonSize);
 }
 
 export function WordPicker({ vocab, onStart }: Props) {
@@ -97,7 +99,7 @@ export function WordPicker({ vocab, onStart }: Props) {
     return entries.filter(({ item }) => activeCategorySet.has(item.category));
   }, [activeCategories.length, activeCategorySet, vocab]);
   const handleDecideForMe = useCallback(() => {
-    onStart(buildBalancedLessonIndices(vocab));
+    onStart(buildBalancedLessonIndices(vocab, DECIDE_FOR_ME_SIZE));
   }, [onStart, vocab]);
 
   // Fade the setup modal in on mount
