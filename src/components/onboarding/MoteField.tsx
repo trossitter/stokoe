@@ -1,6 +1,14 @@
 import { useEffect, useRef } from "react";
 
-export function MoteField({ density = 1 }: { density?: number }) {
+type MoteEnergy = "calm" | "celebrate";
+
+export function MoteField({
+  density = 1,
+  energy = "calm",
+}: {
+  density?: number;
+  energy?: MoteEnergy;
+}) {
   const cvsRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -27,19 +35,22 @@ export function MoteField({ density = 1 }: { density?: number }) {
     resize();
     window.addEventListener("resize", resize);
 
-    const N = Math.round(80 * density);
+    const celebratory = energy === "celebrate";
+    const N = Math.round((celebratory ? 180 : 80) * density);
     for (let i = 0; i < N; i++) {
+      const burstAngle = Math.random() * Math.PI * 2;
+      const burstSpeed = celebratory ? 0.16 + Math.random() * 0.28 : 0;
       motes.push({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: Math.pow(Math.random(), 2.6) * 1.8 + 0.3,
-        vx: (Math.random() - 0.5) * 0.06,
-        vy: (Math.random() - 0.5) * 0.04 - 0.01,
-        a: Math.random() * 0.7 + 0.2,
+        r: Math.pow(Math.random(), celebratory ? 1.8 : 2.6) * (celebratory ? 2.6 : 1.8) + 0.3,
+        vx: celebratory ? Math.cos(burstAngle) * burstSpeed : (Math.random() - 0.5) * 0.06,
+        vy: celebratory ? Math.sin(burstAngle) * burstSpeed - 0.08 : (Math.random() - 0.5) * 0.04 - 0.01,
+        a: Math.random() * (celebratory ? 0.9 : 0.7) + (celebratory ? 0.35 : 0.2),
         phase: Math.random() * Math.PI * 2,
-        speed: 0.0007 + Math.random() * 0.001,
-        pulseAt: Math.random() * 12000 + 4000,
-        pulseDur: 0,
+        speed: (celebratory ? 0.0022 : 0.0007) + Math.random() * (celebratory ? 0.0026 : 0.001),
+        pulseAt: celebratory ? Math.random() * 1800 : Math.random() * 12000 + 4000,
+        pulseDur: celebratory ? Math.random() * 1600 : 0,
       });
     }
 
@@ -62,23 +73,26 @@ export function MoteField({ density = 1 }: { density?: number }) {
 
         m.pulseAt -= dt;
         if (m.pulseAt <= 0) {
-          m.pulseDur = 1400 + Math.random() * 1200;
-          m.pulseAt = 8000 + Math.random() * 16000;
+          m.pulseDur = (celebratory ? 900 : 1400) + Math.random() * (celebratory ? 900 : 1200);
+          m.pulseAt = celebratory ? 900 + Math.random() * 2400 : 8000 + Math.random() * 16000;
         }
         let pulse = 0;
         if (m.pulseDur > 0) {
-          const t = 1 - m.pulseDur / 2200;
-          pulse = Math.sin(t * Math.PI) * 1.2;
+          const t = 1 - m.pulseDur / (celebratory ? 1800 : 2200);
+          pulse = Math.sin(t * Math.PI) * (celebratory ? 1.9 : 1.2);
           m.pulseDur -= dt;
         }
 
         const tw = (Math.sin(m.phase) + 1) * 0.5;
         const alpha = m.a * (0.55 + tw * 0.45) + pulse * 0.55;
-        const r = m.r * (1 + pulse * 1.4);
+        const r = m.r * (1 + pulse * (celebratory ? 2.2 : 1.4));
 
         if (r > 0.9 || pulse > 0.1) {
           const g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r * 8);
           g.addColorStop(0, `oklch(0.95 0.04 85 / ${Math.min(1, alpha) * 0.42})`);
+          if (celebratory) {
+            g.addColorStop(0.45, `oklch(0.78 0.08 210 / ${Math.min(1, alpha) * 0.16})`);
+          }
           g.addColorStop(1, `oklch(0.95 0.04 85 / 0)`);
           ctx.fillStyle = g;
           ctx.beginPath();
@@ -100,7 +114,7 @@ export function MoteField({ density = 1 }: { density?: number }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [density]);
+  }, [density, energy]);
 
   return <canvas ref={cvsRef} className="ob-mote-field" aria-hidden="true" />;
 }

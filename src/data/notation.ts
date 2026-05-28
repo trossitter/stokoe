@@ -25,6 +25,7 @@ export type NotationEntry = {
   orientation: string; // orientation subscript (ASCII)
   sig: string;         // movement symbol (ASCII)
   readable: string;    // plain English description for hint fallback
+  hands?: 1 | 2;        // minimum visible hands expected for structural validation
   requiredParameters?: Array<"tab" | "dez" | "sig">;
   tabSample?: "start" | "middle";
 };
@@ -76,6 +77,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "UBaDf",
     tab: "U", dez: "B", orientation: "a", sig: "Df",
     readable: "Flat hand from chin, arc to open palm",
+    hands: 2,
   },
   "bad": {
     ascii: "UBtDb",
@@ -86,6 +88,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "[ ]5tDv",
     tab: "[ ]", dez: "5", orientation: "t", sig: "Dv",
     readable: "Bent hands on chest, drop downward",
+    hands: 2,
   },
 
   // ── Numbers ───────────────────────────────────────────────────────────────
@@ -150,6 +153,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0GfDg",
     tab: "0", dez: "G", orientation: "f", sig: "Dg",
     readable: "G-hand in neutral space, wrist shake",
+    requiredParameters: ["sig"],
   },
   "yellow": {
     ascii: "0YfDg",
@@ -192,21 +196,25 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "UL>Df",
     tab: "U", dez: "L", orientation: ">", sig: "Df",
     readable: "L-hand from chin, arc down to other hand",
+    hands: 2,
   },
   "brother": {
     ascii: "PL>Df",
     tab: "P", dez: "L", orientation: ">", sig: "Df",
     readable: "L-hand from forehead, arc down to other hand",
+    hands: 2,
   },
   "baby": {
     ascii: "[ ]BaD<>",
     tab: "[ ]", dez: "B", orientation: "a", sig: "Dz",
     readable: "Crossed arms on chest, rock side to side",
+    hands: 2,
   },
   "family": {
     ascii: "0FfD@",
     tab: "0", dez: "F", orientation: "f", sig: "D@",
     readable: "F-hands in neutral space, arc outward to circle",
+    hands: 2,
   },
 
   // ── Common Verbs ──────────────────────────────────────────────────────────
@@ -224,6 +232,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "05aDt",
     tab: "0", dez: "5", orientation: "a", sig: "Dt",
     readable: "Claw hands in neutral, pull toward body",
+    hands: 2,
   },
   "like": {
     ascii: "[ ]8tDf",
@@ -234,11 +243,13 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "[ ]AtD",
     tab: "[ ]", dez: "A", orientation: "t", sig: "D",
     readable: "Crossed arms on chest, static",
+    hands: 2,
   },
   "help": {
     ascii: "0BaD^",
     tab: "0", dez: "B", orientation: "a", sig: "D^",
     readable: "Flat palm lifts fist upward",
+    hands: 2,
   },
   "know": {
     ascii: "}BtDx",
@@ -254,11 +265,13 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0GfDf",
     tab: "0", dez: "G", orientation: "f", sig: "Df",
     readable: "Both index fingers arc outward",
+    hands: 2,
   },
   "come": {
     ascii: "0GfDt",
     tab: "0", dez: "G", orientation: "f", sig: "Dt",
     readable: "Both index fingers arc inward",
+    hands: 2,
   },
   "see": {
     ascii: "TVbDf",
@@ -271,6 +284,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "POaDt",
     tab: "P", dez: "O", orientation: "a", sig: "Dt",
     readable: "Flat-O picks from palm, brings to forehead",
+    hands: 2,
   },
   "sleep": {
     ascii: "Q5tDv",
@@ -305,16 +319,19 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "[ ]BbDx",
     tab: "[ ]", dez: "B", orientation: "b", sig: "Dx·",
     readable: "Flat hand claps down on other palm twice",
+    hands: 2,
   },
   "book": {
     ascii: "0BaD%",
     tab: "0", dez: "B", orientation: "a", sig: "D%",
     readable: "Two flat palms open like a book",
+    hands: 2,
   },
   "name": {
     ascii: "0HbD+",
     tab: "0", dez: "H", orientation: "b", sig: "D+",
     readable: "H-hand crosses over other H-hand",
+    hands: 2,
   },
 
   // ── Questions ─────────────────────────────────────────────────────────────
@@ -322,6 +339,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "05aDz",
     tab: "0", dez: "5", orientation: "a", sig: "Dz",
     readable: "Open hands in neutral space, shake side to side",
+    hands: 2,
   },
   "where": {
     ascii: "0G^Dz",
@@ -337,6 +355,7 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0BbD^",
     tab: "0", dez: "B", orientation: "b", sig: "D^",
     readable: "Bent hands knuckles-together, roll upward",
+    hands: 2,
   },
   "why": {
     ascii: "PBtDf",
@@ -349,11 +368,13 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0L>D%",
     tab: "0", dez: "L", orientation: ">", sig: "D%",
     readable: "Both L-hands move apart (showing size)",
+    hands: 2,
   },
   "small": {
     ascii: "0BfD%",
     tab: "0", dez: "B", orientation: "f", sig: "Dt",
     readable: "Flat hands come close together",
+    hands: 2,
   },
   "hot": {
     ascii: "UCfDg",
@@ -364,10 +385,12 @@ export const NOTATION: Record<string, NotationEntry> = {
     ascii: "0AfDg",
     tab: "0", dez: "A", orientation: "f", sig: "Dg",
     readable: "Both fists near shoulders, shiver",
+    hands: 2,
   },
   "stop": {
     ascii: "[ ]BbDx",
     tab: "[ ]", dez: "B", orientation: "b", sig: "Dx",
     readable: "Flat hand chops down onto open palm",
+    hands: 2,
   },
 };

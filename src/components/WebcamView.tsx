@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { captureFrame, useWebcam } from "../hooks/useWebcam";
+import { CameraFocusScrim } from "./CameraFocusScrim";
 import { getRecordingMimeType } from "./recordingSupport";
 
 const ROI = { x: 0.12, y: 0.05, w: 0.76, h: 0.9 };
@@ -322,7 +323,7 @@ export function WebcamView({
         </div>
       )}
       {!hidden && (
-        <div className="absolute inset-0 pointer-events-none bg-slate-950/10" />
+        <CameraFocusScrim />
       )}
       {recordingCueState === "recording" && !hidden && (
         <div className="absolute bottom-3 left-3 z-30 rounded-md border border-red-300/20 bg-red-950/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-200">

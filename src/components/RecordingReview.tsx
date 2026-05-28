@@ -1,4 +1,5 @@
 import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { CameraFocusScrim } from "./CameraFocusScrim";
 
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1.0];
 const FALLBACK_FRAME_MS = 100;
@@ -242,7 +243,7 @@ export function RecordingReview({
       )}
 
       {!hidden && (
-        <div className="absolute inset-0 pointer-events-none bg-slate-950/10" />
+        <CameraFocusScrim />
       )}
 
       {!hidden && (

@@ -30,9 +30,10 @@ function landmarksWithFingerClose(indexMiddleSpread: number): Landmark[] {
   return landmarks;
 }
 
-function framesFrom(points: Array<[number, number]>): KeypointFrame[] {
+function framesFrom(points: Array<[number, number]>, handCount = 1): KeypointFrame[] {
   return points.map(([x, y], i) => ({
     landmarks: landmarksAt(x, y),
+    handCount,
     timestamp: i * 100,
   }));
 }
@@ -133,6 +134,18 @@ describe("verifyNotation sig checks", () => {
     expect(result.failedParameter).toBeNull();
   });
 
+  it("passes GREEN for a neutral wrist shake", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.48, 0.5], [0.54, 0.5], [0.48, 0.5], [0.54, 0.5]]),
+      NOTATION.green,
+      dezPredictor("G"),
+      null,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
+  });
+
   it("passes when only D@ movement is approximate", async () => {
     const result = await verifyNotation(
       framesFrom([[0.4, 0.45], [0.6, 0.45], [0.4, 0.45], [0.6, 0.45], [0.6, 0.6], [0.6, 0.45]]),
@@ -219,6 +232,42 @@ describe("verifyNotation sign-specific guardrails", () => {
 
     expect(result.passed).toBe(false);
     expect(result.failedParameter).toBe("dez");
+  });
+
+  it("does not pass GREEN for BLACK's one-way forehead drag", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.42, 0.28], [0.5, 0.28], [0.58, 0.28]]),
+      NOTATION.green,
+      dezPredictor("G"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("sig");
+  });
+
+  it("does not pass WANT when only one hand is visible", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.57, 0.5], [0.51, 0.5], [0.45, 0.5]], 1),
+      NOTATION.want,
+      dezPredictor("5"),
+      null,
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.failedParameter).toBe("hands");
+  });
+
+  it("passes WANT when both hands are visible for the pull", async () => {
+    const result = await verifyNotation(
+      framesFrom([[0.57, 0.5], [0.51, 0.5], [0.45, 0.5]], 2),
+      NOTATION.want,
+      dezPredictor("5"),
+      null,
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.failedParameter).toBeNull();
   });
 
   it("does not pass SEE for a static V-hand near the eyes", async () => {

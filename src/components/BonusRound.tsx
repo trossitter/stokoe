@@ -7,6 +7,8 @@ type Props = {
   sessionVocab: VocabItem[];
   allVocab: VocabItem[];
   onExit: () => void;
+  embedded?: boolean;
+  celebratory?: boolean;
 };
 
 type RoundMode = "intro" | "question" | "summary";
@@ -47,7 +49,13 @@ function scoreHeading(score: number, total: number): string {
   return "Keep going.";
 }
 
-export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
+export function BonusRound({
+  sessionVocab,
+  allVocab,
+  onExit,
+  embedded = false,
+  celebratory = false,
+}: Props) {
   const revealTimerRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<number | null>(null);
   const playableVocab = useMemo(
@@ -66,6 +74,7 @@ export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
   const currentQuestion = questionOrder[questionIndex] ?? null;
   const totalQuestions = questionOrder.length;
   const videoUrl = currentQuestion ? getVideoUrl(currentQuestion) : null;
+  const ShellTag = embedded ? "div" : "main";
 
   const clearTimers = useCallback(() => {
     if (revealTimerRef.current) {
@@ -148,16 +157,20 @@ export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
 
   return (
     <div
-      className="relative h-screen overflow-hidden"
+      className={embedded ? "relative h-full min-h-0 overflow-hidden" : "relative h-screen overflow-hidden"}
       style={{ background: "oklch(0.22 0.028 260)" }}
     >
-      <div className="app-mote-bg">
-        <MoteField />
-      </div>
+      {!embedded && (
+        <div className="app-mote-bg">
+          <MoteField density={celebratory ? 1.35 : 1} energy={celebratory ? "celebrate" : "calm"} />
+        </div>
+      )}
 
-      <main className="relative z-10 flex h-full items-center justify-center p-4">
+      <ShellTag className={`relative z-10 flex h-full items-center justify-center ${embedded ? "p-0" : "p-4"}`}>
         <section
-          className="flex h-full max-h-[900px] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border p-4 shadow-2xl sm:p-6"
+          className={`flex h-full w-full flex-col overflow-hidden rounded-2xl border p-4 shadow-2xl sm:p-6 ${
+            embedded ? "max-h-none max-w-none" : "max-h-[900px] max-w-5xl"
+          }`}
           style={{
             background: "oklch(0.26 0.030 260 / 0.78)",
             backdropFilter: "blur(12px)",
@@ -215,7 +228,7 @@ export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300">
                   Watch each sign first, then choose its gloss. It is optional and separate from production practice.
                 </p>
-                <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <div className="mt-7 flex justify-center">
                   <button
                     type="button"
                     onClick={startRound}
@@ -228,13 +241,6 @@ export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
                     }}
                   >
                     Start bonus
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onExit}
-                    className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800/70"
-                  >
-                    Choose signs
                   </button>
                 </div>
               </div>
@@ -362,7 +368,7 @@ export function BonusRound({ sessionVocab, allVocab, onExit }: Props) {
             </div>
           )}
         </section>
-      </main>
+      </ShellTag>
     </div>
   );
 }

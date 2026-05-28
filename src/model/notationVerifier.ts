@@ -5,6 +5,7 @@
  *   Tab  — rule-based: hand position relative to MediaPipe face/body anchors
  *   Dez  — ONNX MLP: 21 normalized landmarks → handshape category
  *   Sig  — rule-based: motion pattern detection over landmark sequence
+ *   Hands — rule-based: verifies two-handed signs have two visible hands
  *
  * Pass logic: at least two of three parameters must pass. Stokoe evaluates the
  * sign's structure rather than trying to recognize a whole-sign label. If the
@@ -15,7 +16,7 @@
 import type { NotationEntry } from "../data/notation";
 
 export type ParameterResult = {
-  parameter: "tab" | "dez" | "sig" | "framing";
+  parameter: "tab" | "dez" | "sig" | "hands" | "framing";
   passed: boolean;
   confidence: number;
   hint: string;
@@ -24,7 +25,7 @@ export type ParameterResult = {
 export type VerificationResult = {
   passed: boolean;
   confidence: number;
-  failedParameter: "tab" | "dez" | "sig" | "framing" | null;
+  failedParameter: "tab" | "dez" | "sig" | "hands" | "framing" | null;
 };
 
 // ── Landmark types (mirrors MediaPipe output) ─────────────────────────────────
@@ -35,8 +36,11 @@ type HandLandmarks = Landmark[];  // 21 landmarks
 // Frame data passed in from WebcamView
 export type KeypointFrame = {
   landmarks: HandLandmarks | null;
+  handCount?: number;
   timestamp: number;
 };
+
+const TWO_HAND_VISIBILITY_RATIO = 0.4;
 
 // ── Normalization ─────────────────────────────────────────────────────────────
 
@@ -111,6 +115,37 @@ function checkTab(
     passed,
     confidence: passed ? 0.8 : 0.3,
     hint,
+  };
+}
+
+function checkHands(
+  validFrames: KeypointFrame[],
+  expectedHands: 1 | 2 | undefined,
+): ParameterResult {
+  if (expectedHands !== 2) {
+    return {
+      parameter: "hands",
+      passed: true,
+      confidence: 0.8,
+      hint: "Keep your hands visible.",
+    };
+  }
+
+  const twoHandFrames = validFrames.filter((frame) => {
+    const handCount = frame.handCount ?? (frame.landmarks ? 1 : 0);
+    return handCount >= 2;
+  }).length;
+  const requiredFrames = Math.max(
+    2,
+    Math.ceil(validFrames.length * TWO_HAND_VISIBILITY_RATIO),
+  );
+  const passed = twoHandFrames >= requiredFrames;
+
+  return {
+    parameter: "hands",
+    passed,
+    confidence: passed ? 0.8 : 0.2,
+    hint: "Keep both hands visible for this sign.",
   };
 }
 
@@ -229,7 +264,11 @@ function checkSig(
       // Detect palm orientation change (rough proxy: z variance of fingertips)
       const zVals = validFrames.map(f => f.landmarks![12].z); // middle fingertip
       const zRange = Math.max(...zVals) - Math.min(...zVals);
-      passed = zRange > 0.05 || totalMovement > 0.02;
+      const lateralReversals = countReversals(dx);
+      passed = zRange > 0.05 ||
+               (lateralReversals >= 1 &&
+                lateralMovement > 0.02 &&
+                lateralMovement >= verticalMovement * 1.2);
       hint = "Twist or shake your wrist.";
       break;
     }
@@ -325,6 +364,8 @@ export async function verifyNotation(
   const tabFrame = notation.tabSample === "start" ? validFrames[0] : midFrame;
   const handLm = midFrame.landmarks!;
 
+  const handsResult = checkHands(validFrames, notation.hands);
+
   // Tab check
   const tabResult = checkTab(tabFrame.landmarks!, faceLandmarks, notation.tab);
 
@@ -352,14 +393,16 @@ export async function verifyNotation(
   };
   const requiredParameters = notation.requiredParameters ?? [];
   const requiredPassed = requiredParameters.every((parameter) => parameterResults[parameter]);
-  const passed = paramsPassed >= 2 && requiredPassed;
-  const confidence = (tabResult.confidence + dezConfidence + sigResult.confidence) / 3;
+  const passed = paramsPassed >= 2 && requiredPassed && handsResult.passed;
+  const baseConfidence = (tabResult.confidence + dezConfidence + sigResult.confidence) / 3;
+  const confidence = handsResult.passed ? baseConfidence : Math.min(baseConfidence, handsResult.confidence);
 
   // Identify which parameter to hint on
   let failedParameter: VerificationResult["failedParameter"] = null;
   if (!passed) {
     const failedRequired = requiredParameters.find((parameter) => !parameterResults[parameter]);
     if (failedRequired) failedParameter = failedRequired;
+    else if (!handsResult.passed) failedParameter = "hands";
     else if (!tabResult.passed) failedParameter = "tab";
     else if (!dezPassed) failedParameter = "dez";
     else failedParameter = "sig";

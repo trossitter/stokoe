@@ -1,4 +1,4 @@
-import { detectLandmarks } from "./handLandmarker";
+import { detectHandFrame } from "./handLandmarker";
 import { verifyNotation } from "./notationVerifier";
 import type { KeypointFrame } from "./notationVerifier";
 import { getDezPredictor } from "./dezPredictor";
@@ -16,6 +16,7 @@ const PARAM_TO_HINT: Record<string, HintKey> = {
   tab: "location",
   dez: "handshape",
   sig: "movement",
+  hands: "framing",
   framing: "framing",
 };
 
@@ -34,8 +35,12 @@ export async function classifyAttempt(
   const [keypointFrames, dezPredictor] = await Promise.all([
     Promise.all(
       frames.map(async (frame, i): Promise<KeypointFrame> => {
-        const landmarks = await detectLandmarks(frame);
-        return { landmarks, timestamp: i * 100 };
+        const detection = await detectHandFrame(frame);
+        return {
+          landmarks: detection.landmarks,
+          handCount: detection.handCount,
+          timestamp: i * 100,
+        };
       }),
     ),
     getDezPredictor(),

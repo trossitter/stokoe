@@ -5,15 +5,18 @@ vi.mock("./notationVerifier", () => ({
   verifyNotation: vi.fn(),
 }));
 
-// Mock handLandmarker so detectLandmarks returns a minimal hand without WebGL/Wasm
+const { mockLandmarks } = vi.hoisted(() => ({
+  mockLandmarks: Array.from({ length: 21 }, (_, i) => ({
+    x: i * 0.002,
+    y: i * 0.001,
+    z: 0,
+  })),
+}));
+
+// Mock handLandmarker so detection returns a minimal hand without WebGL/Wasm
 vi.mock("./handLandmarker", () => ({
-  detectLandmarks: vi.fn().mockResolvedValue(
-    Array.from({ length: 21 }, (_, i) => ({
-      x: i * 0.002,
-      y: i * 0.001,
-      z: 0,
-    })),
-  ),
+  detectHandFrame: vi.fn().mockResolvedValue({ landmarks: mockLandmarks, handCount: 1 }),
+  detectLandmarks: vi.fn().mockResolvedValue(mockLandmarks),
 }));
 
 // Mock dezPredictor so no ONNX model is loaded
@@ -22,13 +25,15 @@ vi.mock("./dezPredictor", () => ({
 }));
 
 import { verifyNotation } from "./notationVerifier";
+import { detectHandFrame } from "./handLandmarker";
 import { classifyAttempt } from "./signClassifier";
 import { NOTATION } from "../data/notation";
 import { VOCAB } from "../data/vocab";
 
 const mockVerify = vi.mocked(verifyNotation);
+const mockDetectHandFrame = vi.mocked(detectHandFrame);
 
-// Minimal ImageData stand-in — classifyAttempt passes frames to detectLandmarks
+// Minimal ImageData stand-in — classifyAttempt passes frames to detectHandFrame
 // which is fully mocked, so the actual content doesn't matter
 function makeFrames(count: number): ImageData[] {
   return Array.from({ length: count }, () => ({} as ImageData));
@@ -36,6 +41,7 @@ function makeFrames(count: number): ImageData[] {
 
 beforeEach(() => {
   mockVerify.mockReset();
+  mockDetectHandFrame.mockResolvedValue({ landmarks: mockLandmarks, handCount: 1 });
 });
 
 describe("classifyAttempt — sign exists in NOTATION map", () => {
@@ -100,6 +106,26 @@ describe("classifyAttempt — sign exists in NOTATION map", () => {
 
     expect(result.passed).toBe(false);
     expect(result.hintKey).toBe("framing");
+  });
+
+  it("returns hintKey='framing' when a two-handed sign has only one visible hand", async () => {
+    mockVerify.mockResolvedValue({ passed: false, failedParameter: "hands", confidence: 0.2 });
+
+    const result = await classifyAttempt(makeFrames(3), "want");
+
+    expect(result.passed).toBe(false);
+    expect(result.hintKey).toBe("framing");
+  });
+
+  it("passes detected hand counts to notation verification", async () => {
+    mockDetectHandFrame.mockResolvedValue({ landmarks: mockLandmarks, handCount: 2 });
+    mockVerify.mockResolvedValue({ passed: true, failedParameter: null, confidence: 0.9 });
+
+    await classifyAttempt(makeFrames(2), "want");
+
+    const keypointFrames = mockVerify.mock.calls[0][0];
+    expect(keypointFrames).toHaveLength(2);
+    expect(keypointFrames.every((frame) => frame.handCount === 2)).toBe(true);
   });
 });
 

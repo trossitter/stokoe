@@ -4,6 +4,10 @@ let _landmarker: HandLandmarker | null = null;
 let _loading: Promise<HandLandmarker> | null = null;
 
 type Delegate = "GPU" | "CPU";
+export type DetectedHandFrame = {
+  landmarks: Array<{ x: number; y: number; z: number }> | null;
+  handCount: number;
+};
 
 const DELEGATES: Delegate[] = ["GPU", "CPU"];
 const LOCAL_ASSETS = {
@@ -43,7 +47,7 @@ async function createHandLandmarker() {
       try {
         return await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath: assets.modelAssetPath, delegate },
-          numHands: 1,
+          numHands: 2,
           minHandDetectionConfidence: 0.3,
           minHandPresenceConfidence: 0.2,
           runningMode: "IMAGE",
@@ -75,10 +79,10 @@ export async function getHandLandmarker(): Promise<HandLandmarker> {
 }
 
 // Upscale an ImageData to a canvas and detect hand landmarks.
-// Returns null if no hand detected.
-export async function detectLandmarks(
+// Preserves both the primary hand landmarks and how many hands were visible.
+export async function detectHandFrame(
   frame: ImageData,
-): Promise<Array<{ x: number; y: number; z: number }> | null> {
+): Promise<DetectedHandFrame> {
   const landmarker = await getHandLandmarker();
 
   // Upscale 64×64 → 256×256 for better detection
@@ -94,6 +98,19 @@ export async function detectLandmarks(
   ctx.drawImage(tmpCanvas, 0, 0, 256, 256);
 
   const result = landmarker.detect(canvas);
-  if (!result.landmarks || result.landmarks.length === 0) return null;
-  return result.landmarks[0] as Array<{ x: number; y: number; z: number }>;
+  const handCount = result.landmarks?.length ?? 0;
+  return {
+    landmarks: handCount > 0
+      ? result.landmarks[0] as Array<{ x: number; y: number; z: number }>
+      : null,
+    handCount,
+  };
+}
+
+// Backward-compatible helper for code that only needs the primary hand.
+export async function detectLandmarks(
+  frame: ImageData,
+): Promise<Array<{ x: number; y: number; z: number }> | null> {
+  const result = await detectHandFrame(frame);
+  return result.landmarks;
 }

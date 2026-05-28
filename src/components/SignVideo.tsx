@@ -220,7 +220,12 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
           style={{ boxShadow: "inset 0 0 60px rgb(0 0 0 / 0.34)" }}
           aria-label="Show reference video"
         >
-          <span className="absolute left-5 top-4 text-xs font-medium text-slate-400">Reference</span>
+          <span
+            className="absolute left-5 top-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            {item.word}
+          </span>
           <p className="text-2xl font-semibold text-slate-200">Click to show</p>
           <ReferenceToggleButton hidden={hidden} onToggleHidden={onToggleHidden} />
         </div>
@@ -242,7 +247,6 @@ export function SignVideo({ item, hidden, paused = false, onToggleHidden }: Prop
           {status.loading && (
             <div className="absolute inset-0 bg-slate-800 animate-pulse" />
           )}
-          <span className="absolute left-5 top-4 z-10 text-xs font-medium text-slate-300">Reference</span>
           {/*
             key={item.id} remounts the video element on sign change so the browser
             discards the previous src and resets playback to the beginning automatically.

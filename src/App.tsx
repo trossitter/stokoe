@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHandSwipe } from "./hooks/useHandSwipe";
 import { useGestureNav } from "./hooks/useGestureNav";
 import { GestureHint } from "./components/GestureHint";
@@ -11,7 +11,7 @@ import type { Progress, UserProfile } from "./store/progress";
 import { WebcamView } from "./components/WebcamView";
 import type { RecordingCueState } from "./components/WebcamView";
 import { SignPrompt } from "./components/SignPrompt";
-import { FeedbackPanel } from "./components/FeedbackPanel";
+import { ProgressDrawer } from "./components/FeedbackPanel";
 import { SignVideo } from "./components/SignVideo";
 import { WordPicker } from "./components/WordPicker";
 import { NotationLab } from "./components/NotationLab";
@@ -26,7 +26,7 @@ import { GestureTooltip } from "./components/GestureTooltip";
 
 type SessionState = "idle" | "recording" | "evaluating" | "result";
 type AppPhase = "login" | "login-exit" | "splash" | "app" | "bonus";
-type AppView = "practice" | "notation";
+type AppView = "practice" | "notation" | "bonus";
 type GestureConfirmation = "Skip" | "Next" | "Record" | "Retry";
 
 const BONUS_TRANSITION_DELAY_MS = 1600;
@@ -183,7 +183,7 @@ function PromptFocusOverlay({
                     color: "oklch(0.18 0.024 260)",
                   }}
                 >
-                  {hasAttempt ? "Record again" : "Record"}
+                  {hasAttempt ? "Record again" : "Start signing"}
                 </button>
                 <button
                   onClick={(event) => {
@@ -223,7 +223,7 @@ function PromptFocusOverlay({
                     color: "oklch(0.18 0.024 260)",
                   }}
                 >
-                  {hasAttempt ? "Record again" : "Record"}
+                  {hasAttempt ? "Record again" : "Start signing"}
                 </button>
                 <button
                   onClick={(event) => {
@@ -255,7 +255,7 @@ export default function App() {
   const [vocabIndex, setVocabIndex] = useState(0);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [passed, setPassed] = useState<boolean | null>(null);
-  const [confidence, setConfidence] = useState<number | null>(null);
+  const [, setConfidence] = useState<number | null>(null);
   const [hintKey, setHintKey] = useState<HintKey | null>(null);
   const [progress, setProgress] = useState<Progress>(() => getProgress());
   const [swipeFlash, setSwipeFlash] = useState<"left" | "right" | null>(null);
@@ -271,6 +271,8 @@ export default function App() {
   const [lastRecordingFrames, setLastRecordingFrames] = useState<string[]>([]);
   const [recordingIssue, setRecordingIssue] = useState(false);
   const [recordingCueState, setRecordingCueState] = useState<RecordingCueState>("idle");
+  const [feedbackTucked, setFeedbackTucked] = useState(false);
+  const [bonusCelebrating, setBonusCelebrating] = useState(false);
   const [forceOnboarding, setForceOnboarding] = useState(
     () => searchParams.has("onboarding")
   );
@@ -286,7 +288,14 @@ export default function App() {
   const notationAvailable = !!profile?.tutorialDone && !showTutorial;
   const currentView: AppView = notationAvailable ? activeView : "practice";
   const showNotationLab = notationAvailable && currentView === "notation";
+  const showBonusLab = notationAvailable && currentView === "bonus";
   const showWordPicker = !!profile && !showTutorial && currentView === "practice" && lessonOrder === null;
+  const tabBonusVocab = useMemo(() => {
+    if (bonusVocab.length > 0) return bonusVocab;
+    return activeOrder
+      .map((index) => VOCAB[index])
+      .filter((entry): entry is VocabItem => !!entry);
+  }, [activeOrder, bonusVocab]);
 
   const handleLogin = (name: string, powerUser: boolean) => {
     const saved = saveProfile(name, powerUser);
@@ -328,6 +337,7 @@ export default function App() {
         setHintKey(result.hintKey);
         setProgress(updated);
         setRecordingIssue(false);
+        setFeedbackTucked(false);
         setSessionState("result");
       } catch {
         const updated = recordAttempt(item.id, false);
@@ -336,6 +346,7 @@ export default function App() {
         setHintKey("framing");
         setProgress(updated);
         setRecordingIssue(false);
+        setFeedbackTucked(false);
         setSessionState("result");
       }
     },
@@ -382,6 +393,7 @@ export default function App() {
     setPracticePaused(true);
     setPracticeStarted(false);
     setPromptDocked(false);
+    setFeedbackTucked(false);
     setVideoHidden(true);
     setGestureConfirmation(null);
     setRecordingIssue(false);
@@ -416,6 +428,7 @@ export default function App() {
   const handleStartLesson = useCallback((indices: number[]) => {
     if (indices.length === 0) return;
     setAppPhase("app");
+    setBonusCelebrating(false);
     setLessonOrder(indices);
     resetPracticeState();
   }, [resetPracticeState]);
@@ -427,6 +440,7 @@ export default function App() {
     setAppPhase("app");
     setActiveView("practice");
     setBonusVocab([]);
+    setBonusCelebrating(false);
     setLessonOrder([index]);
     resetPracticeState();
   }, [resetPracticeState]);
@@ -436,6 +450,7 @@ export default function App() {
     setActiveView("practice");
     setLessonOrder(null);
     setBonusVocab([]);
+    setBonusCelebrating(false);
     resetPracticeState();
   }, [resetPracticeState]);
 
@@ -461,20 +476,19 @@ export default function App() {
     setPracticePaused(true);
   }, [clearBonusTransition]);
 
-  const handlePracticePauseToggle = useCallback(() => {
-    if (practicePaused) {
-      setPracticeStarted(true);
-      setPracticePaused(false);
-      return;
-    }
-    if (sessionState === "recording") {
-      setSessionState("idle");
-    }
-    setPracticePaused(true);
-  }, [practicePaused, sessionState]);
+  const handleOpenBonus = useCallback(() => {
+    const sessionItems = activeOrder
+      .map((index) => VOCAB[index])
+      .filter((entry): entry is VocabItem => !!entry);
 
-  const handleRecordAttempt = useCallback(() => {
-    if (!practiceStarted || practicePaused || sessionState !== "idle") return;
+    clearBonusTransition();
+    setBonusVocab(sessionItems);
+    setBonusCelebrating(false);
+    setActiveView("bonus");
+    setPracticePaused(true);
+  }, [activeOrder, clearBonusTransition]);
+
+  const beginRecordingAttempt = useCallback(() => {
     clearBonusTransition();
     clearLastRecording();
     setPassed(null);
@@ -482,9 +496,28 @@ export default function App() {
     setHintKey(null);
     setRecordingIssue(false);
     setRecordingCueState("idle");
+    setFeedbackTucked(false);
     setSessionState("recording");
     setRecordRequestId((id) => id + 1);
-  }, [clearBonusTransition, clearLastRecording, practicePaused, practiceStarted, sessionState]);
+  }, [clearBonusTransition, clearLastRecording]);
+
+  const handlePracticePauseToggle = useCallback(() => {
+    if (practicePaused) {
+      setPracticeStarted(true);
+      setPracticePaused(false);
+      beginRecordingAttempt();
+      return;
+    }
+    if (sessionState === "recording") {
+      setSessionState("idle");
+    }
+    setPracticePaused(true);
+  }, [beginRecordingAttempt, practicePaused, sessionState]);
+
+  const handleRecordAttempt = useCallback(() => {
+    if (!practiceStarted || practicePaused || sessionState !== "idle") return;
+    beginRecordingAttempt();
+  }, [beginRecordingAttempt, practicePaused, practiceStarted, sessionState]);
 
   const startBonusRound = useCallback(() => {
     const sessionIndices = lessonOrder ?? activeOrder;
@@ -493,6 +526,7 @@ export default function App() {
       .filter((entry): entry is VocabItem => !!entry);
 
     setBonusVocab(sessionItems);
+    setBonusCelebrating(true);
     resetPracticeState();
     setPracticePaused(true);
     setAppPhase("bonus");
@@ -519,6 +553,7 @@ export default function App() {
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
     setRecordingCueState("idle");
+    setFeedbackTucked(false);
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -530,6 +565,7 @@ export default function App() {
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
     setRecordingCueState("idle");
+    setFeedbackTucked(false);
     setVideoHidden(true);
     setSessionState("idle");
     clearLastRecording();
@@ -540,6 +576,7 @@ export default function App() {
     setPassed(null); setConfidence(null); setHintKey(null);
     setRecordingIssue(false);
     setRecordingCueState("idle");
+    setFeedbackTucked(false);
     setSessionState("idle");
   }, [clearBonusTransition]);
 
@@ -628,6 +665,7 @@ export default function App() {
         sessionVocab={bonusVocab}
         allVocab={VOCAB}
         onExit={handleBonusExit}
+        celebratory={bonusCelebrating}
       />
     );
   }
@@ -638,20 +676,27 @@ export default function App() {
   const gestureConfirmationOverlay = gestureConfirmation
     ? <GestureActionFlash label={gestureConfirmation} />
     : null;
+  const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && (!!lastRecordingUrl || lastRecordingFrames.length > 0);
+  const resultFeedbackOverlay = displayState === "result" && passed !== null
+    ? (
+      <CameraHint
+        item={item}
+        hintKey={hintKey ?? "framing"}
+        passed={passed}
+        tucked={feedbackTucked}
+        onToggleTucked={() => setFeedbackTucked((tucked) => !tucked)}
+      />
+    )
+    : null;
   const practiceOverlay = swipeFlash
     ? <SwipeFlash direction={swipeFlash} />
     : (
       <>
-        {displayState === "result" && passed !== null ? (
-          <>
-            <CameraHint item={item} hintKey={hintKey ?? "framing"} passed={passed} />
-            {gestureHint}
-          </>
-        ) : gestureHint}
+        {!reviewVisible && resultFeedbackOverlay}
+        {gestureHint}
         {gestureConfirmationOverlay}
       </>
   );
-  const reviewVisible = currentView === "practice" && !showTutorial && !showWordPicker && displayState === "result" && (!!lastRecordingUrl || lastRecordingFrames.length > 0);
   const gestureTooltipVisible = displayState === "result" && !showTutorial && !showWordPicker;
 
   return (
@@ -710,6 +755,18 @@ export default function App() {
                 >
                   Notation
                 </button>
+                <button
+                  type="button"
+                  onClick={handleOpenBonus}
+                  className="rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                  style={{
+                    background: currentView === "bonus" ? "oklch(0.94 0.042 85 / 0.14)" : "transparent",
+                    color: currentView === "bonus" ? "oklch(0.94 0.042 85)" : "rgb(148 163 184)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Learn
+                </button>
               </nav>
             )}
           </div>
@@ -739,6 +796,15 @@ export default function App() {
           <main className="flex-1 min-h-0 overflow-hidden p-3">
             <NotationLab vocab={VOCAB} onPracticeSign={handlePracticeSignFromNotation} />
           </main>
+        ) : showBonusLab ? (
+          <main className="flex-1 min-h-0 overflow-hidden p-3">
+            <BonusRound
+              sessionVocab={tabBonusVocab}
+              allVocab={VOCAB}
+              onExit={handleOpenPractice}
+              embedded
+            />
+          </main>
         ) : showWordPicker ? (
           <main className="flex-1 min-h-0 overflow-hidden p-3">
             <WordPicker
@@ -747,8 +813,9 @@ export default function App() {
             />
           </main>
         ) : (
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 p-3 min-h-0 overflow-hidden">
-          <div className="flex flex-col gap-3 min-h-0">
+        <main className="relative flex-1 p-3 min-h-0 overflow-hidden">
+          <ProgressDrawer progress={progress} />
+          <div className="flex h-full flex-col gap-3 min-h-0">
             <SignPrompt
               record={progress[item.id]}
               sessionState={displayState}
@@ -763,7 +830,7 @@ export default function App() {
               recordingIssue={recordingIssue}
               recordingCueState={recordingCueState}
             />
-            {/* Webcam + reference video side by side so learner can compare in real time */}
+            {/* Reference + attempt side by side, matching the onboarding preview order. */}
             <div className="relative flex-1 grid items-start gap-3 min-h-0 grid-cols-1 md:grid-cols-2">
               <PromptFocusOverlay
                 item={item}
@@ -775,6 +842,12 @@ export default function App() {
                 onStart={handlePracticePauseToggle}
                 onSkip={handleSkip}
                 onRetry={handleRetry}
+              />
+              <SignVideo
+                item={item}
+                hidden={videoHidden}
+                paused={practicePaused}
+                onToggleHidden={() => setVideoHidden((hidden) => !hidden)}
               />
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="relative aspect-[4/3] w-full min-h-0">
@@ -810,6 +883,7 @@ export default function App() {
                       onToggleHidden={() => setUserVideoHidden((hidden) => !hidden)}
                       overlay={
                         <>
+                          {resultFeedbackOverlay}
                           {gestureHint}
                           {gestureConfirmationOverlay}
                         </>
@@ -820,23 +894,7 @@ export default function App() {
                 <GestureTooltip visible={gestureTooltipVisible} />
                 </div>
               </div>
-              <SignVideo
-                item={item}
-                hidden={videoHidden}
-                paused={practicePaused}
-                onToggleHidden={() => setVideoHidden((hidden) => !hidden)}
-              />
             </div>
-          </div>
-          <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
-            <FeedbackPanel
-              item={item}
-              sessionState={displayState}
-              passed={passed}
-              hintKey={hintKey}
-              confidence={confidence}
-              progress={progress}
-            />
           </div>
         </main>
         )}
